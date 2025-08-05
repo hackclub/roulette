@@ -1,11 +1,82 @@
 ---
-import Welcome from '../components/Welcome.astro';
 import Layout from '../layouts/Layout.astro';
+import LinkButton from '../components/LinkButton.astro';
+import logo from '../assets/logo.png';
+import background from '../assets/background.png';
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+import '../styles/global.css';
+
+
 ---
 
 <Layout>
-	<Welcome />
+<main>
+	<div class="background">
+		<img src={background.src} alt="" fetchpriority="high" style="width: 100%; height: 100%;"/>
+	</div>
+
+	<div class="foreground">
+		<img class="logo" src={logo.src} alt="" fetchpriority="high"/>
+		<p>spin wheels. make games. get prizes.</p>
+		<p>starts 8 august.</p>
+
+		<LinkButton href="https://hackclub.slack.com/archives/C0997MH9QF2" newpage>join #roulette on slack</LinkButton>
+
+	</div>
+
+</main>
 </Layout>
+
+
+<style>
+	main {
+		width: 100%;
+		height: 100%;
+		text-align: center;
+
+	}
+
+	main > div {
+		position: absolute;
+		width: 100%;
+		height: 100%;
+	}
+
+	.foreground {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-flow: column;
+		padding: 20px;
+		box-sizing: border-box;
+	}
+
+	.foreground .logo {
+		margin-bottom: 16px;
+		width: 60%;
+	}
+
+	.foreground p {
+		margin: 8px 0;
+	}
+
+
+
+	.background {
+		position: relative;
+
+	}
+
+	.background img {
+		object-fit: cover;
+		position: absolute;
+		display: block;
+	}
+
+	@media (max-width: 600px) {
+		.foreground .logo {
+			width: 90%;
+		}
+	}
+
+</style>

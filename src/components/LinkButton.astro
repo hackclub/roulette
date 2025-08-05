@@ -1,0 +1,41 @@
+---
+const { href = "#", newpage = false } = Astro.props;
+---
+
+<a class="button" href={href} target={newpage ? "_blank" : "_self"}>
+  <slot />
+</a>
+
+<style>
+.button {
+	margin: 32px 0;
+	box-sizing: border-box;
+	position: relative;
+	background-color: var(--pink);
+	color: var(--black);
+	text-decoration: none;
+
+	 border-radius: 16px;
+	 padding: 8px 24px;
+
+	 box-shadow:
+	 6px 4px 0 0px var(--black),
+	 8px 2px 0 0px var(--pink),
+	 8px 6px 0 0px var(--pink),
+	 6px 6px 0 0px var(--pink);
+
+	 left: 0px;
+	 top: 0px;
+
+	 transition: 0.05s ease-in-out;
+
+	}
+
+
+	.button:hover {
+		box-shadow: none;
+		left: 8px;
+		top: 6px;
+
+	}
+</style>

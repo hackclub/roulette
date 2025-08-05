@@ -1,11 +1,29 @@
 <!doctype html>
 <html lang="en">
 	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro Basics</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link rel="icon" type="image/jpg" href="/icon.png">
+
+		<title>Gamedev Roulette</title>
+		<meta name="description" content="Spin wheels. Make games. Get prizes.">
+
+		<meta property="og:url" content="https://roulette.hackclub.com">
+		<meta property="og:type" content="website">
+		<meta property="og:title" content="Gamedev Roulette">
+		<meta property="og:description" content="Spin wheels. Make games. Get prizes.">
+		<meta property="og:image" content="/ogimg.png">
+
+		<meta name="twitter:card" content="summary_large_image">
+		<meta property="twitter:domain" content="roulette.hackclub.com">
+		<meta property="twitter:url" content="https://roulette.hackclub.com">
+		<meta name="twitter:title" content="Gamedev Roulette">
+		<meta name="twitter:description" contents="Spin wheels. Make games. Get prizes.">
+		<meta name="twitter:image" content="/ogimg.png">
+
+		<meta name="theme-color" content="#FF698A">
+
+		<link rel="canonical" href="https://roulette.hackclub.com">
 	</head>
 	<body>
 		<slot />
@@ -16,7 +34,20 @@
 	html,
 	body {
 		margin: 0;
+
+	}
+
+	html {
+		width: 100vw;
+		height: 100vh;
+	}
+
+	body {
 		width: 100%;
 		height: 100%;
 	}
+
+
+
+
 </style>
