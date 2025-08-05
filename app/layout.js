@@ -16,6 +16,7 @@ export const metadata = {
     description: "Spin wheels. Make games. Get prizes.",
     images: ["/opengraph-image.png"],
   },
+  metadataBase: new URL("https://roulette.hackclub.com")
 };
 
 export default function RootLayout({ children }) {
