@@ -9,7 +9,7 @@ const righteous = Righteous({
 
 
 export const metadata = {
-  title: "Roulette",
+  title: "Gamedev Roulette",
   description: "Spin wheels. Make games. Get prizes.",
 };
 
