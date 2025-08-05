@@ -1,6 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Righteous&display=swap');
 
 
+
 :root {
   --pink: #FF698A;
   --dpink: #773140;
@@ -21,7 +22,7 @@ body {
   font-style: normal;
 
   font-size: 1.5em;
-  overflow-y: hidden;
+  overflow: hidden;
 }
 
 
