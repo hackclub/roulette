@@ -1,0 +1,81 @@
+---
+import bg_back from '../assets/bg_back.png';
+import bg_roulette from '../assets/roulette circle.png';
+import bg_front from '../assets/bg_front.png';
+---
+
+<div class="background">
+  <img src={bg_back.src} alt="" fetchpriority="high" style="width: 100%; height: 100%;"/>
+  <img class="spin1" src={bg_roulette.src} alt="" />
+  <img class="spin2" src={bg_roulette.src} alt="" />
+
+  <img src={bg_front.src} alt=""  style="width: 100%; height: 100%;"/>
+</div>
+
+<style>
+
+.background {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+
+.spin1 {
+  animation-name: spin1;
+  animation-duration: 60s;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+
+  transform-origin: center;
+  height: 70%;
+  left: -10%;
+  bottom: -30%;
+}
+
+@keyframes spin1 {
+  0% {transform: skew(20deg, -10deg) rotate(0);}
+  100% {transform: skew(20deg, -10deg) rotate(360deg) ;}
+}
+
+.spin2 {
+  animation-name: spin2;
+  animation-duration: 200s;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  animation-direction: reverse;
+
+  transform-origin: center;
+  height: 140%;
+  right: -40%;
+  top: -80%;
+}
+
+@keyframes spin2 {
+  0% {transform: skew(-19deg, 4deg) rotate(0);}
+  100% {transform: skew(-19deg, 4deg) rotate(360deg) ;}
+}
+
+
+
+.background img {
+  object-fit: cover;
+  position: absolute;
+  display: block;
+}
+
+@media (max-width: 600px) {
+  .spin1 {
+    left: -60%;
+  }
+
+  .spin2 {
+    right: -180%;
+    top: -110%;
+  }
+
+
+}
+
+</style>
