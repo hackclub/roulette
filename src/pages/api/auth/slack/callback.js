@@ -1,5 +1,10 @@
 import jwt from 'jsonwebtoken';
 import fetch from 'node-fetch';
+
+import { jwtVerify, createRemoteJWKSet } from 'jose';
+
+const JWKS = createRemoteJWKSet(new URL('https://slack.com/openid/connect/keys'));
+
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -14,7 +19,7 @@ export async function GET({ request }) {
 
   if (!code) return new Response('No code provided', { status: 400 });
 
-  // exchange code for tokens
+
   const params = new URLSearchParams({
     client_id: process.env.SLACK_CLIENT_ID,
     client_secret: process.env.SLACK_CLIENT_SECRET,
@@ -35,23 +40,37 @@ export async function GET({ request }) {
     return new Response('Failed to get id_token', { status: 400 });
   }
 
-  // verify id_token (JWT)
-  // for full security, fetch Slack JWKs and verify signature.
-  // for dev/demo, you can decode without verifying:
+  // const userInfoRes = await fetch('https://slack.com/api/openid.connect.userInfo', {
+  //   headers: { Authorization: `Bearer ${tokenData.access_token}` }
+  // });
+  // console.log(userInfoRes);
+  // const userInfo = await userInfoRes.json();
+  // console.log(userInfo);
+
+  const profileRes = await fetch('https://slack.com/api/users.profile.get', {
+    headers: {
+      Authorization: `Bearer ${tokenData.access_token}`,
+      'Content-Type': 'application/json',
+    }
+  });
+  const profileData = await profileRes.json();
+  const displayName = profileData.profile?.display_name || profileData.profile?.real_name;
+  console.log(profileData);
+
+
   const decoded = jwt.decode(tokenData.id_token, { complete: true });
 
-  const yourSignedJwt = jwt.sign({ userId: decoded.payload.sub }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-  console.log('Decoded ID Token:', decoded);
+  // verify the thing
+  const { payload } = await jwtVerify(tokenData.id_token, JWKS, {
+    issuer: 'https://slack.com',
+    audience: process.env.SLACK_CLIENT_ID,
+  });
 
-  // You now have user info in decoded.payload
 
-  // return new Response(`Hello, ${decoded.payload.name || 'user'}!`, {
-  //   status: 200,
-  //   headers: {
-  //     'Set-Cookie': `token=${yourSignedJwt}; HttpOnly; Path=/; Max-Age=3600`
-  //   }
-  // );
+
+  const yourSignedJwt = jwt.sign({ userId: payload.sub }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
 
   // return new Response(`Hello, ${decoded.payload.name || 'user'}!`, {
   // status: 200,
@@ -66,7 +85,7 @@ export async function GET({ request }) {
     status: 302,
     headers: {
       'Set-Cookie': `token=${yourSignedJwt}; HttpOnly; Path=/; Max-Age=3600; SameSite=Lax`,
-      'Location': '/', // or wherever your main site lives
+      'Location': '/dashboard'
     },
   });
 

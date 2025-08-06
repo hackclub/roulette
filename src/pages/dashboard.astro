@@ -1,4 +1,7 @@
 ---
+import Layout from '../layouts/Layout.astro';
+import Background from '../components/Background.astro';
+
 import jwt from 'jsonwebtoken';
 import { redirect } from 'astro';
 
@@ -16,7 +19,7 @@ const token = cookies.token;
 let user = null;
 
 try {
-  user = jwt.verify(token, import.meta.env.JWT_SECRET);
+  user = jwt.verify(token, process.env.JWT_SECRET);
 } catch {
   return new Response(null, {
     status: 302,
@@ -28,10 +31,31 @@ try {
 }
 ---
 
+<Layout>
+<main>
+<Background>
+</Background>
+<div class="foreground">
+<p>Welcome, {user.userId}!</p>
 
-<html>
-<body>
-  <h1>Welcome, {user.userId}!</h1>
-  <p>test</p>
-</body>
-</html>
+</div>
+
+</main>
+</Layout>
+
+
+<style>
+	main {
+		width: 100%;
+		height: 100%;
+		text-align: center;
+
+		overflow: hidden;
+	}
+
+	main > div {
+		position: absolute;
+		width: 100%;
+		height: 100%;
+	}
+  </style>

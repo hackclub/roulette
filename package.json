@@ -10,8 +10,10 @@
     "start": "node ./dist/server/entry.mjs"
   },
   "dependencies": {
+    "airtable": "^0.12.2",
     "astro": "^5.12.8",
     "dotenv": "^17.2.1",
+    "jose": "^6.0.12",
     "jsonwebtoken": "^9.0.2",
     "node-fetch": "^3.3.2"
   },
