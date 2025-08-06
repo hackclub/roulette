@@ -3,16 +3,22 @@
   "type": "module",
   "version": "0.0.1",
   "scripts": {
-    "dev": "astro dev",
+    "dev": "astro dev --mode server",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "start": "node ./dist/server/entry.mjs"
   },
   "dependencies": {
-    "astro": "^5.12.8"
+    "astro": "^5.12.8",
+    "dotenv": "^17.2.1",
+    "jsonwebtoken": "^9.0.2",
+    "node-fetch": "^3.3.2"
   },
   "engines": {
     "node": ">=18.20.8"
+  },
+  "devDependencies": {
+    "@astrojs/node": "^9.3.3"
   }
-
 }

@@ -1,0 +1,37 @@
+---
+import jwt from 'jsonwebtoken';
+import { redirect } from 'astro';
+
+export const prerender = false;
+const cookieHeader = Astro.request.headers.get('cookie') || '';
+console.log('cookie header:', Astro.request.headers.get('cookie'));
+
+const cookies = Object.fromEntries(cookieHeader.split('; ').map(c => {
+  const [key, ...v] = c.split('=');
+  return [key, v.join('=')];
+}));
+
+const token = cookies.token;
+
+let user = null;
+
+try {
+  user = jwt.verify(token, import.meta.env.JWT_SECRET);
+} catch {
+  return new Response(null, {
+    status: 302,
+    headers: {
+      Location: '/',
+    },
+    });
+
+}
+---
+
+
+<html>
+<body>
+  <h1>Welcome, {user.userId}!</h1>
+  <p>test</p>
+</body>
+</html>
