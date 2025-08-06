@@ -2,33 +2,25 @@
 import Layout from '../layouts/Layout.astro';
 import Background from '../components/Background.astro';
 
-import jwt from 'jsonwebtoken';
-import { redirect } from 'astro';
+
+import { requireUser } from '../lib/auth.js';
+
+let userData;
 
 export const prerender = false;
-const cookieHeader = Astro.request.headers.get('cookie') || '';
-console.log('cookie header:', Astro.request.headers.get('cookie'));
-
-const cookies = Object.fromEntries(cookieHeader.split('; ').map(c => {
-  const [key, ...v] = c.split('=');
-  return [key, v.join('=')];
-}));
-
-const token = cookies.token;
-
-let user = null;
 
 try {
-  user = jwt.verify(token, process.env.JWT_SECRET);
+  userData = await requireUser(Astro.request.headers);
+
 } catch {
   return new Response(null, {
     status: 302,
-    headers: {
-      Location: '/',
-    },
-    });
-
+    headers: { Location: '/' },
+  });
 }
+
+var user = userData.fields;
+
 ---
 
 <Layout>
@@ -36,7 +28,9 @@ try {
 <Background>
 </Background>
 <div class="foreground">
-<p>Welcome, {user.userId}!</p>
+<p>Welcome, {user.name}!</p>
+
+<img src={user.avatar}></img>
 
 </div>
 

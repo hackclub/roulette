@@ -2,6 +2,8 @@ import jwt from 'jsonwebtoken';
 import fetch from 'node-fetch';
 
 import { jwtVerify, createRemoteJWKSet } from 'jose';
+import { createOrUpdateUser } from '../../../../lib/airtable.js';
+
 
 const JWKS = createRemoteJWKSet(new URL('https://slack.com/openid/connect/keys'));
 
@@ -54,8 +56,12 @@ export async function GET({ request }) {
     }
   });
   const profileData = await profileRes.json();
-  const displayName = profileData.profile?.display_name || profileData.profile?.real_name;
-  console.log(profileData);
+  const profile = profileData.profile;
+
+  const displayName = profile.display_name || profile.real_name;
+  const avatar = profile.image_192 || profile.image_72;
+
+
 
 
   const decoded = jwt.decode(tokenData.id_token, { complete: true });
@@ -67,6 +73,13 @@ export async function GET({ request }) {
     audience: process.env.SLACK_CLIENT_ID,
   });
 
+
+  createOrUpdateUser(
+    { "slackId": payload.sub,
+      "name": displayName,
+      "avatar": avatar,
+    });
+  console.log(payload.sub, displayName, avatar);
 
 
   const yourSignedJwt = jwt.sign({ userId: payload.sub }, process.env.JWT_SECRET, { expiresIn: '1h' });
