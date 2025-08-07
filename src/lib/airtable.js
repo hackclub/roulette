@@ -5,7 +5,6 @@ dotenv.config();
 
 const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(process.env.AIRTABLE_BASE_ID);
 
-// OHH DATABASE get users based on slackid
 export async function getUserBySlackId(slackId) {
   const records = await base('Users')
     .select({
@@ -18,15 +17,13 @@ export async function getUserBySlackId(slackId) {
 }
 
 
-export async function createOrUpdateUser({ slackId, name, avatar, chips = 10, email}) {
+export async function createOrUpdateUser({ slackId, name, avatar, email}) {
   const existingUser = await getUserBySlackId(slackId);
 
   if (existingUser) {
-
     return base('Users').update(existingUser.id, {
       'name': name,
       'avatar': avatar,
-      'chips': chips,
       'email': email
     });
   } else {
@@ -34,7 +31,7 @@ export async function createOrUpdateUser({ slackId, name, avatar, chips = 10, em
       'slackId': slackId,
       'name': name,
       'avatar': avatar,
-      'chips': chips,
+      'chips': 10,
       'email': email
     });
   }
