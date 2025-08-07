@@ -43,6 +43,7 @@ a:hover {
   text-decoration-style: solid;
 }
 
+
 @media (max-width: 600px) {
   body {
     font-size: 1.3em;

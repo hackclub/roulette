@@ -45,7 +45,10 @@ const wheel_info = {
 <div class="container">
 	<Background style="position: static;"></Background>
 
-	<div class="foreground">
+	<div class="dim" id="dim" style="width: 100vw; height: 100vh; position: absolute; background-color: black;"></div>
+
+
+	<div class="foreground" id="foreground">
 		<img class="logo" src="/logo.png" alt="" fetchpriority="high" style="padding-top: 20vh;"/>
 		<p>spin wheels. make games. get prizes.</p>
 		<p>starts 8 august.</p>
@@ -55,15 +58,15 @@ const wheel_info = {
 			: <LinkButton href="/spin" newpage arrow>enter roulette</LinkButton>
 		}
 
-		<div class="explain">
+		<div class="explain" id="explain">
 
 			<img src="/open_how it works.png" style="position: relative; left: 50px; margin-bottom: -100px; width: 70%;"></img>
 
 			<div style="position: absolute; left: 5%; width: 20%; font-size: 0.7em; height: 225px;">
 
-			<BoxAlt fullHeight>
+			<!-- BoxAlt fullHeight>
 				<p style="color: black">hover on a wheel to try!</p>
-			</BoxAlt>
+			</BoxAlt -->
 
 			</div>
 
@@ -94,7 +97,7 @@ const wheel_info = {
 				    margin: 0 auto;
 				    padding: 20px;
 						font-size: 0.7em;">
-				wager: <span class="wager-count">5</span> chips (you have 10 total)
+				wager: <span class="wager-count">5</span> chips (you start with 10)
 				<input type="range" id="chips" name="chips" min="0" max="10" class="slider"/>
 				</div>
 			</div>
@@ -209,6 +212,7 @@ const wheel_info = {
 		overflow-y: scroll;
 		width: 100%;
 		height: 100%;
+
 	}
 
 	.foreground .logo {
@@ -290,6 +294,16 @@ const wheel_info = {
     padding: 20px 0;
   }
 
+  .dim {
+    opacity: 0;
+  }
+
+  .dim.enabled {
+    opacity: 1;
+  }
+
+
+
 
 
 	@media (max-width: 600px) {
@@ -341,5 +355,33 @@ slider.oninput = function() {
 
 
 }
+
+
+
+const dims = document.getElementById('dim');
+
+const foreground = document.getElementById('foreground');
+
+const explain = document.getElementById('explain');
+
+const opac_max = 0.7
+const range = 200
+const range_offset = -300
+foreground.addEventListener('scroll', () => {
+  const rect = explain.getBoundingClientRect();
+  const y = rect.top; // distance from top of viewport
+  console.log('foreground Y in viewport:', y);
+
+
+  var opac = - ((y + range_offset)/(range*2)) * opac_max;
+  opac = Math.min(opac, opac_max)
+  opac = Math.max(opac, 0)
+  dim.style.opacity = opac;
+
+  console.log(dim.style.opacity);
+});
+
+
+
 
 </script>
