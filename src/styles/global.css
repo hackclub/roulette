@@ -34,6 +34,14 @@ p {
   margin: 8px 0;
 }
 
+a {
+  color: var(--pink);
+  text-decoration-style: wavy;
+}
+
+a:hover {
+  text-decoration-style: solid;
+}
 
 @media (max-width: 600px) {
   body {

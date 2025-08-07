@@ -1,0 +1,44 @@
+
+---
+const { fullHeight = false, offset_x = 0, offset_y = 0, rotation = 0 } = Astro.props;
+---
+
+<div style=`position: relative; left: ${offset_x}; top: ${offset_y}; transform: rotate(${rotation}deg)` class={ fullHeight ? "outlinebox fullheight" : "outlinebox"}>
+<div class="gamblebox">
+<slot />
+
+</div>
+</div>
+
+<style>
+.gamblebox p {
+  color: var(--black);
+}
+.gamblebox {
+  background-color: var(--pink);
+  border-radius: 30px;
+  padding: 20px;
+  height: 100%;
+  box-sizing: border-box;
+
+  display: flex;
+  flex-flow: column;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.outlinebox {
+  background-color: var(--black);
+  border-radius: 36px;
+  border: var(--pink) 1.5px solid;
+  padding: 4px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.fullheight {
+  height: 100%;
+}
+
+</style>

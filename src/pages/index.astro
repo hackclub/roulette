@@ -1,10 +1,18 @@
 ---
 import LinkButton from '../components/LinkButton.astro';
-
-import BackgroundLayout from '../layouts/BackgroundLayout.astro';
-
-
+import BoxText from '../components/BoxText.astro';
 import Wheel from '../components/Wheel.astro';
+import GambleCard from '../components/GambleCard.astro';
+import BoxAlt from '../components/BoxAlt.astro';
+import InlineArrow from '../components/InlineArrow.astro';
+
+
+
+import Layout from '../layouts/Layout.astro';
+import Background from '../components/Background.astro';
+
+
+
 
 
 
@@ -22,36 +30,185 @@ try {
 }
 
 
+
+const wheel_info = {
+	"camera": {
+
+	}
+}
+
 ---
 
 
-<BackgroundLayout>
-<div class="foreground">
-	<img class="logo" src="/logo.png" alt="" fetchpriority="high"/>
-	<p>spin wheels. make games. get prizes.</p>
-	<p>starts 8 august.</p>
 
-	{ userData == null
-		? <LinkButton href="/api/auth/slack" newpage arrow>sign in with slack</LinkButton>
-		: <LinkButton href="/spin" newpage arrow>enter roulette</LinkButton>
-	}
+<Layout>
+<div class="container">
+	<Background style="position: static;"></Background>
 
-	<Wheel wheelChoice="camera"></Wheel>
+	<div class="foreground">
+		<img class="logo" src="/logo.png" alt="" fetchpriority="high" style="padding-top: 20vh;"/>
+		<p>spin wheels. make games. get prizes.</p>
+		<p>starts 8 august.</p>
+
+		{ userData == null
+			? <LinkButton href="/api/auth/slack" newpage arrow>sign in with slack</LinkButton>
+			: <LinkButton href="/spin" newpage arrow>enter roulette</LinkButton>
+		}
+
+		<div class="explain">
+
+			<img src="/open_how it works.png" style="position: relative; left: 50px; margin-bottom: -100px; width: 70%;"></img>
+
+			<div style="position: absolute; left: 5%; width: 20%; font-size: 0.7em; height: 225px;">
+
+			<BoxAlt fullHeight>
+				<p style="color: black">hover on a wheel to try!</p>
+			</BoxAlt>
+
+			</div>
+
+			<div style="position: absolute; left: 5%; margin-top: 150px;">
+			<Wheel wheelChoice="camera"></Wheel>
+			</div>
+			<div style="position: absolute; left: 20%; margin-top: 70px;">
+			<Wheel wheelChoice="gameplay"></Wheel>
+			</div>
+			<div style="position: absolute; left: 35%; margin-top: 180px;">
+			<Wheel wheelChoice="setting"></Wheel>
+			</div>
+
+
+
+			<div style="position: relative; margin-top: 160px; margin-left: 40%;">
+				<BoxText>1. at the start of each round, spin wheels to determine your game content. there are 5 rounds that last 7 days each.</BoxText>
+			</div>
+
+
+			<div style="position: relative; margin-top: 160px; margin-right: 50%;">
+				<BoxText>2. gamble against yourself: hit the hours within the week or lose it all.</BoxText>
+			</div>
+
+			<div style="position: relative; margin-top: -20px; margin-left: 40%;">
+				<div style="background-color: var(--black);
+				    border-radius: 36px;
+				    margin: 0 auto;
+				    padding: 20px;
+						font-size: 0.7em;">
+				wager: <span class="wager-count">5</span> chips (you have 10 total)
+				<input type="range" id="chips" name="chips" min="0" max="10" class="slider"/>
+				</div>
+			</div>
+
+			<div style="position: relative; margin-top: 25px; display: flex; width: 100%; gap: 8px; justify-content: space-between;">
+
+				<GambleCard hours='5' mult=1.5 rotation="-1"><span class="wager-count">5</span><InlineArrow/><span class="wager-pt5x">7.5</span> chips</GambleCard>
+				<GambleCard hours='10' mult=2 rotation="4"><span class="wager-count">5</span><InlineArrow/><span class="wager-twox">10</span> chips</GambleCard>
+				<GambleCard hours='25' mult=3 rotation="-3"><span class="wager-count">5</span><InlineArrow/><span class="wager-threex">15</span> chips</GambleCard>
+			</div>
+
+			<div style="position: relative; margin-top: 50px;">
+				<BoxText><p>3. cash in your chips in the shop!</p>
+				</BoxText>
+			</div>
+
+			<div class="prizes">
+			<img src="/prize_aseprite.png" style="transform: rotate(20deg); left: 50px;"></img>
+			<img src="/prize_steam.png" style="transform: rotate(-5deg); "></img>
+			<img src="/prize_fangamer.png" style="transform: rotate(9deg); left: -10px;"></img>
+			<img src="/prize_nintendo.webp" style="left: -30px;"></img>
+
+			</div>
+
+			<div class="prizes-price">
+				<p>aseprite (40 chips) · steam gift card (25 chips) · fangamer gift card (60 chips) · nintendo switch (800 chips) · + other prizes!</p>
+			</div>
+
+
+			<img src="open_faq.png" style="margin-top: 100px; width: 25%;"></img>
+			<div class="faq">
+				<BoxText>
+
+				<div style="width: 100%; text-align: left;">
+				<details>
+				<summary>am i eligible to participate?</summary>
+				yes, if you're 18 years old or younger!
+				</details>
+
+				<details>
+				<summary>how are the hours tracked? what counts?</summary>
+				<p>hours will be tracked using hackatime!</p>
+				<p>you can also report additional hours spent creating the assets for your game, such as art or audio. you need to substantiate these hours with screenshots and explanations.</p>
+				</details>
+
+				<details>
+				<summary>what's required of the game?</summary>
+				<p>your game must export to the web and have at least 5 minutes of gameplay.</p>
+				<p>your code must be open-source.</p>
+				<p>you should try your best to follow the prompts given by the wheel.</p>
+				</details>
+
+
+				<details>
+				<summary>how long will roulette run for?</summary>
+				<p>roulette will run for 5 rounds — each round lasting seven days.</p>
+				<p>the first round begins in the afternoon 8 august (pst).</p>
+				<p>the last round ends on 12 september.</p>
+				</details>
+
+				<details>
+				<summary>can i double-dip with other hack club events?</summary>
+				<p>double-dipping is not allowed for roulette — sorry!</p>
+				</details>
+
+				<details>
+				<summary>can i work in a team?</summary>
+				<p>roulette is meant to be a singleplayer challenge, at least for now.
+				</details>
+
+				<p>have more questions? head to <a href="https://hackclub.slack.com/archives/C0997MH9QF2" target="_blank">#roulette</a> on slack!
+
+				</div>
+
+				</BoxText>
+			</div>
+
+			<footer style="padding: 120px 20px 50px;">
+			made with ❤︎ by @tongyu
+			</footer>
+
+
+
+		</div>
+
+	</div>
+
 
 </div>
-</BackgroundLayout>
-
+</Layout>
 
 
 <style>
+	.container {
+
+		text-align: center;
+
+		overflow: hidden;
+	}
+
+	.container > div {
+		position: absolute;
+
+	}
 
 	.foreground {
 		display: flex;
 		align-items: center;
-		justify-content: center;
 		flex-flow: column;
 		padding: 20px;
 		box-sizing: border-box;
+		overflow-y: scroll;
+		width: 100%;
+		height: 100%;
 	}
 
 	.foreground .logo {
@@ -61,11 +218,77 @@ try {
 
 
 
-
 	.foreground p {
 		margin: 8px 0;
 	}
 
+  .explain {
+    padding-top: 100px;
+    width: 90%;
+    box-sizing: border-box;
+  }
+
+
+
+  .slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+
+    height: 3px;
+    background: var(--pink);
+
+  }
+
+  .slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 15px;
+    height: 25px;
+    background: var(--black);
+    border: 3px solid var(--pink);
+    box-sizing: border-box;
+
+    cursor: pointer;
+
+  }
+
+  .slider::-moz-range-thumb {
+    width: 20px;
+    height: 40px;
+    background: var(--black);
+    border: 4px solid var(--pink);
+    box-sizing: border-box;
+    cursor: pointer;
+  }
+
+
+  .prizes {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: -50px;
+  }
+
+  .prizes img {
+    width: 30%;
+    position: relative;
+  }
+
+  .prizes-price {
+    background-color: var(--black);
+    border-radius: 36px;
+    width: 60%;
+    margin: 0 auto;
+    padding: 20px;
+    margin-top: -20px;
+    font-size: 0.7em;
+  }
+
+
+  .faq details {
+    padding: 20px 0;
+  }
 
 
 
@@ -78,3 +301,45 @@ try {
 	}
 
 </style>
+
+<script>
+var slider = document.getElementById("chips");
+
+var outputs = document.getElementsByClassName('wager-count');
+
+var output_pt5x = document.getElementsByClassName('wager-pt5x')
+
+var output_twox = document.getElementsByClassName('wager-twox')
+
+var output_threex = document.getElementsByClassName('wager-threex')
+
+for (var i = 0; i < outputs.length; i++) {
+  outputs[i].textContent = slider.value;
+}
+
+
+slider.oninput = function() {
+  var pt5x = slider.value * 1.5;
+  var twox = slider.value * 2;
+  var threex = slider.value * 3;
+
+  for (var i = 0; i < outputs.length; i++) {
+    outputs[i].textContent = slider.value;
+  }
+
+  for (var i = 0; i < output_pt5x.length; i++) {
+    output_pt5x[i].textContent = pt5x;
+  }
+
+  for (var i = 0; i < output_twox.length; i++) {
+    output_twox[i].textContent = twox;
+  }
+
+  for (var i = 0; i < output_threex.length; i++) {
+    output_threex[i].textContent = threex;
+  }
+
+
+}
+
+</script>
