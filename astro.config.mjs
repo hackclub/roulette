@@ -6,9 +6,12 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 export default defineConfig({
+  output: 'server',
+  adapter: node(),
+  mode: 'server',
   vite: {
     server: {
-        allowedHosts: [".ngrok-free.app"],
+        allowedHosts: [".ngrok-free.app", "roulette.hackclub.com"],
     },
   },
 });
