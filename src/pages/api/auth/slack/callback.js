@@ -42,26 +42,22 @@ export async function GET({ request }) {
     return new Response('Failed to get id_token', { status: 400 });
   }
 
-  // const userInfoRes = await fetch('https://slack.com/api/openid.connect.userInfo', {
-  //   headers: { Authorization: `Bearer ${tokenData.access_token}` }
+
+  // const profileRes = await fetch('https://slack.com/api/users.profile.get', {
+  //   headers: {
+  //     Authorization: `Bearer ${tokenData.access_token}`,
+  //     'Content-Type': 'application/json',
+  //   }
   // });
-  // console.log(userInfoRes);
-  // const userInfo = await userInfoRes.json();
-  // console.log(userInfo);
-
-  const profileRes = await fetch('https://slack.com/api/users.profile.get', {
-    headers: {
-      Authorization: `Bearer ${tokenData.access_token}`,
-      'Content-Type': 'application/json',
-    }
-  });
-  const profileData = await profileRes.json();
-  const profile = profileData.profile;
-
-  const displayName = profile.display_name || profile.real_name;
-  const avatar = profile.image_192 || profile.image_72;
-
-
+  // console.log(profileRes);
+  // const profileData = await profileRes.json();
+  // const profile = profileData.profile;
+  //
+  // const displayName = profile.display_name || profile.real_name;
+  // const avatar = profile.image_192 || profile.image_72;
+  //
+  // console.log("got user data of ", displayName, avatar)
+  //
 
 
   const decoded = jwt.decode(tokenData.id_token, { complete: true });
@@ -76,22 +72,14 @@ export async function GET({ request }) {
 
   createOrUpdateUser(
     { "slackId": payload.sub,
-      "name": displayName,
-      "avatar": avatar,
+      "name": payload.name,
+      "avatar": "",
     });
-  console.log(payload.sub, displayName, avatar);
+  console.log(payload.sub, payload.name, "");
 
 
   const yourSignedJwt = jwt.sign({ userId: payload.sub }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-
-  // return new Response(`Hello, ${decoded.payload.name || 'user'}!`, {
-  // status: 200,
-  // headers: {
-  //   'Set-Cookie': `token=${yourSignedJwt}; HttpOnly; Path=/; Max-Age=3600; SameSite=Lax`,
-  //   'Content-Type': 'text/plain',
-  //   },
-  // });
 
 
   return new Response(null, {
