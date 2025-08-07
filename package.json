@@ -10,6 +10,7 @@
     "start": "node ./dist/server/entry.mjs"
   },
   "dependencies": {
+    "@slack/web-api": "^7.9.3",
     "airtable": "^0.12.2",
     "astro": "^5.12.8",
     "dotenv": "^17.2.1",

@@ -4,6 +4,11 @@ import fetch from 'node-fetch';
 import { jwtVerify, createRemoteJWKSet } from 'jose';
 import { createOrUpdateUser } from '../../../../lib/airtable.js';
 
+import { WebClient } from '@slack/web-api';
+
+const web = new WebClient(process.env.SLACK_BOT_TOKEN);
+
+
 
 const JWKS = createRemoteJWKSet(new URL('https://slack.com/openid/connect/keys'));
 
@@ -43,6 +48,9 @@ export async function GET({ request }) {
   }
 
 
+
+
+
   // const profileRes = await fetch('https://slack.com/api/users.profile.get', {
   //   headers: {
   //     Authorization: `Bearer ${tokenData.access_token}`,
@@ -69,13 +77,26 @@ export async function GET({ request }) {
     audience: process.env.SLACK_CLIENT_ID,
   });
 
+  const slackUserId = payload.sub;  // or however you get user slack id
 
-  createOrUpdateUser(
+  const response = await web.users.info({ user: slackUserId });
+
+  if (!response.ok) {
+    // handle error
+    console.error('Slack users.info failed:', response.error);
+  }
+
+  const userProfile = response.user.profile;
+  const displayName = userProfile.display_name || userProfile.real_name;
+  const avatar = userProfile.image_192 || userProfile.image_72;
+
+
+
+  await createOrUpdateUser(
     { "slackId": payload.sub,
-      "name": payload.name,
-      "avatar": "",
+      "name": displayName,
+      "avatar": avatar,
     });
-  console.log(payload.sub, payload.name, "");
 
 
   const yourSignedJwt = jwt.sign({ userId: payload.sub }, process.env.JWT_SECRET, { expiresIn: '1h' });
