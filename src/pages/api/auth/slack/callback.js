@@ -77,7 +77,9 @@ export async function GET({ request }) {
     audience: process.env.SLACK_CLIENT_ID,
   });
 
-  const slackUserId = payload.sub;  // or however you get user slack id
+  const slackUserId = payload.sub;
+
+
 
   const response = await web.users.info({ user: slackUserId });
 
@@ -86,9 +88,13 @@ export async function GET({ request }) {
     console.error('Slack users.info failed:', response.error);
   }
 
+
+
   const userProfile = response.user.profile;
+  console.log(userProfile);
   const displayName = userProfile.display_name || userProfile.real_name;
   const avatar = userProfile.image_192 || userProfile.image_72;
+  const email = userProfile.email;
 
 
 
@@ -96,6 +102,7 @@ export async function GET({ request }) {
     { "slackId": payload.sub,
       "name": displayName,
       "avatar": avatar,
+      "email": email
     });
 
 

@@ -18,7 +18,7 @@ export async function getUserBySlackId(slackId) {
 }
 
 
-export async function createOrUpdateUser({ slackId, name, avatar, chips = 10 }) {
+export async function createOrUpdateUser({ slackId, name, avatar, chips = 10, email}) {
   const existingUser = await getUserBySlackId(slackId);
 
   if (existingUser) {
@@ -27,6 +27,7 @@ export async function createOrUpdateUser({ slackId, name, avatar, chips = 10 }) 
       'name': name,
       'avatar': avatar,
       'chips': chips,
+      'email': email
     });
   } else {
     return base('Users').create({
@@ -34,6 +35,7 @@ export async function createOrUpdateUser({ slackId, name, avatar, chips = 10 }) 
       'name': name,
       'avatar': avatar,
       'chips': chips,
+      'email': email
     });
   }
 }
