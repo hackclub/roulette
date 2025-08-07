@@ -25,6 +25,17 @@ body {
   overflow: hidden;
 }
 
+img.avatar {
+  height: 1.2em;
+  position: relative;
+  top: 0.2em;
+  border-radius: 0.2em;
+}
+
+p {
+  margin: 8px 0;
+}
+
 
 @media (max-width: 600px) {
   body {

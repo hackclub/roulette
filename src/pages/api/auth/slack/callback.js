@@ -98,7 +98,7 @@ export async function GET({ request }) {
     status: 302,
     headers: {
       'Set-Cookie': `token=${yourSignedJwt}; HttpOnly; Path=/; Max-Age=3600; SameSite=Lax`,
-      'Location': '/dashboard'
+      'Location': '/spin'
     },
   });
 

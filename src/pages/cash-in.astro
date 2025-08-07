@@ -1,0 +1,45 @@
+---
+import InsideLayout from '../layouts/InsideLayout.astro';
+
+
+import { requireUser, redirectToLogin } from '../lib/auth.js';
+
+let userData;
+
+export const prerender = false;
+
+try {
+  userData = await requireUser(Astro.request.headers);
+
+} catch {
+  return redirectToLogin();
+}
+
+var user = userData.fields;
+
+
+---
+
+<InsideLayout currentPage="cash-in">
+
+
+<main>
+
+<p>cash in your chips for awesome shop items.</p>
+<p>coming soon.</p>
+
+</main>
+
+</InsideLayout>
+
+
+<style>
+main {
+  display: flex;
+  flex-flow: column;
+  justify-content: center;
+  height: 100%;
+}
+
+
+</style>

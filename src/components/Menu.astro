@@ -1,0 +1,184 @@
+---
+
+import menu_wheel from '../assets/menu_wheel.svg';
+
+const { currentPage } = Astro.props;
+---
+
+<div class="wheel-container">
+
+<div class={ currentPage === "spin" ? "wheel_section section0 current" : "wheel_section section0"}
+onclick={ currentPage === "spin" ? undefined : "window.location='/spin';" }
+>
+
+<svg class="wheel_svg" viewBox="0 0 203 151" fill="currentColor" xmlns="http://www.w3.org/2000/svg"
+
+>
+<path d="M3.16199 22.5069C6.62142 52.6547 5.61007 82.2893 0.653601 110.747L194.141 150.309C203.033 102.153 205.003 51.8807 199.087 0.706593L3.16199 22.5069Z"/>
+</svg>
+
+<p class="wheel_section_text">spin</p>
+
+</div>
+
+<div class={ currentPage === "gallery" ? "wheel_section section1 current" : "wheel_section section1"}
+onclick={ currentPage === "gallery" ? undefined : "window.location='/gallery';" }
+>
+<svg class="wheel_svg"  viewBox="0 0 203 151" fill="currentColor" xmlns="http://www.w3.org/2000/svg"
+
+>
+<path d="M3.16199 22.5069C6.62142 52.6547 5.61007 82.2893 0.653601 110.747L194.141 150.309C203.033 102.153 205.003 51.8807 199.087 0.706593L3.16199 22.5069Z"/>
+</svg>
+
+<p class="wheel_section_text">gallery</p>
+</div>
+
+<div class={ currentPage === "cash-in" ? "wheel_section section2 current" : "wheel_section section2"}
+
+onclick={ currentPage === "cash-in" ? undefined : "window.location='/cash-in';" }
+
+>
+<svg class="wheel_svg"  viewBox="0 0 203 151" fill="currentColor" xmlns="http://www.w3.org/2000/svg"
+
+>
+<path d="M3.16199 22.5069C6.62142 52.6547 5.61007 82.2893 0.653601 110.747L194.141 150.309C203.033 102.153 205.003 51.8807 199.087 0.706593L3.16199 22.5069Z"/>
+</svg>
+
+<p class="wheel_section_text">cash in</p>
+</div>
+
+
+
+<div class={ currentPage === "settings" ? "wheel_section section3 current" : "wheel_section section3"}
+onclick={ currentPage === "settings" ? undefined : "window.location='/settings';" }
+
+>
+<svg class="wheel_svg"  viewBox="0 0 203 151" fill="currentColor" xmlns="http://www.w3.org/2000/svg"
+
+>
+<path d="M3.16199 22.5069C6.62142 52.6547 5.61007 82.2893 0.653601 110.747L194.141 150.309C203.033 102.153 205.003 51.8807 199.087 0.706593L3.16199 22.5069Z"/>
+</svg>
+
+<p class="wheel_section_text">settings</p>
+</div>
+
+
+<img class="menu-wheel" src="/menu_wheel.svg" renderPriority="high"></img>
+
+
+
+
+</div>
+
+
+
+<style>
+
+.wheel-container {
+  position: absolute;
+  height: 100vh;
+
+  margin-left: -50vh;
+  margin-top: -50vh;
+  left: -25vh;
+  top: 50%;
+
+  transform: rotate(6deg);
+  transform-origin: 50vh 50vh;
+
+}
+
+
+.wheel_section {
+  position: absolute;
+  left: 79.3vh;
+  width: 20vh;
+  top: 45.3vh;
+  color: var(--black);
+
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+
+  display: flex;
+  flex-flow: column;
+  justify-content: center;
+  align-items: right;
+}
+
+
+
+.wheel_section_text {
+  position: absolute;
+  right: 0;
+  color: var(--pink);
+  z-index: 1;
+  top: 50%;
+  padding: 0;
+  margin: 0;
+  margin-top: -0.6em;
+
+  text-align: right;
+  vertical-align: center;
+  padding-right: 16px;
+}
+
+
+
+.wheel_section.current {
+  color: var(--pink);
+}
+
+.wheel_section:not(.current):hover {
+  cursor: pointer;
+}
+
+.wheel_section.current .wheel_section_text {
+  color: var(--black);
+}
+
+.wheel_section:not(.current):hover {
+  color: var(--dpink);
+}
+
+
+.section0 {
+  transform: rotate(-35.5deg);
+  transform-origin: -29.5vh 4.7vh;
+}
+
+.section1 {
+  transform: rotate(-18deg);
+  transform-origin: -28.5vh 4.4vh;
+}
+
+
+.section2 {
+}
+
+.section3 {
+  transform: rotate(18deg);
+  transform-origin: -27.6vh 5vh;
+}
+
+
+.section3 p {
+  margin-top: -0.8em;
+}
+
+.menu-wheel {
+  position: absolute;
+  height: 100%;
+  pointer-events: none;
+
+  -webkit-user-select: none; /* Safari */
+  -moz-user-select: none; /* Firefox */
+  -ms-user-select: none; /* IE10+/Edge */
+  user-select: none; /* Standard */
+
+}
+
+
+
+</style>

@@ -2,21 +2,39 @@
 import Layout from '../layouts/Layout.astro';
 import LinkButton from '../components/LinkButton.astro';
 import Background from '../components/Background.astro';
-import logo from '../assets/logo.png';
 
 import BackgroundLayout from '../layouts/BackgroundLayout.astro';
+
+
+
+import { requireUser, redirectToLogin } from '../lib/auth.js';
+
+let userData;
+
+export const prerender = false;
+
+try {
+  userData = await requireUser(Astro.request.headers);
+
+} catch {
+	userData = null;
+}
+
 
 ---
 
 
 <BackgroundLayout>
 <div class="foreground">
-	<img class="logo" src={logo.src} alt="" fetchpriority="high"/>
+	<img class="logo" src="/logo.png" alt="" fetchpriority="high"/>
 	<p>spin wheels. make games. get prizes.</p>
 	<p>starts 8 august.</p>
 
-	<LinkButton href="https://hackclub.slack.com/archives/C0997MH9QF2" newpage>sign in with slack</LinkButton>
-	<!-- LinkButton href="https://hackclub.slack.com/archives/C0997MH9QF2" newpage>join #roulette on slack</LinkButton -->
+	{ userData == null
+		? <LinkButton href="/api/auth/slack" newpage arrow>sign in with slack</LinkButton>
+		: <LinkButton href="/spin" newpage arrow>enter roulette</LinkButton>
+	}
+
 
 </div>
 </BackgroundLayout>

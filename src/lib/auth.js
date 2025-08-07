@@ -25,8 +25,18 @@ export async function requireUser(headers) {
   const token = getTokenFromCookies(headers);
   const decoded = verifyJwt(token);
 
+  console.log(decoded);
+
   const user = await getUserBySlackId(decoded.userId);
 
   if (!user) throw new Error('user not found');
   return user;
+}
+
+
+export function redirectToLogin() {
+  return new Response(null, {
+    status: 302,
+    headers: { Location: '/' },
+  });
 }

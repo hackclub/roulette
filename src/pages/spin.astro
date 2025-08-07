@@ -1,0 +1,46 @@
+---
+import InsideLayout from '../layouts/InsideLayout.astro';
+
+
+import { requireUser, redirectToLogin } from '../lib/auth.js';
+
+let userData;
+
+export const prerender = false;
+
+try {
+  userData = await requireUser(Astro.request.headers);
+
+} catch {
+  return redirectToLogin();
+}
+
+var user = userData.fields;
+
+
+---
+
+<InsideLayout currentPage="spin">
+
+
+<main>
+<p>welcome, {user.name}! <img class="avatar" src={user.avatar}></img></p>
+<p>the first spin begins on august 8.</p>
+<p></p>
+<p>you currently have 10 chips.</p>
+
+</main>
+
+</InsideLayout>
+
+
+<style>
+main {
+  display: flex;
+  flex-flow: column;
+  justify-content: center;
+  height: 100%;
+}
+
+
+</style>

@@ -1,0 +1,49 @@
+---
+import InsideLayout from '../layouts/InsideLayout.astro';
+import LinkButton from '../components/LinkButton.astro';
+
+
+import { requireUser, redirectToLogin } from '../lib/auth.js';
+
+let userData;
+
+export const prerender = false;
+
+try {
+  userData = await requireUser(Astro.request.headers);
+
+} catch {
+  return redirectToLogin();
+}
+
+var user = userData.fields;
+
+
+---
+
+<InsideLayout currentPage="settings">
+
+
+<main>
+
+<p>more settings coming soon.</p>
+
+<LinkButton href="/api/auth/logout">log out</LinkButton>
+
+
+</main>
+
+</InsideLayout>
+
+
+<style>
+main {
+  display: flex;
+  flex-flow: column;
+  justify-content: center;
+  height: 100%;
+  align-items: flex-start;
+}
+
+
+</style>

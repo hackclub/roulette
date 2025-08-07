@@ -1,0 +1,44 @@
+---
+import BackgroundLayout from '../layouts/BackgroundLayout.astro';
+import Box from '../components/Box.astro';
+import Menu from '../components/Menu.astro';
+
+import menu_wheel from '../assets/menu_wheel.svg';
+
+
+const { currentPage } = Astro.props;
+
+---
+
+<BackgroundLayout>
+<Box>
+<div class="main-container">
+
+<slot />
+
+</div>
+</Box>
+<Menu currentPage={currentPage}></Menu>
+</BackgroundLayout>
+<style>
+
+
+.main-container {
+  margin-left: 24vh;
+  text-align: left;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 10px;
+}
+
+
+@media (max-width: 600px) {
+  .main-container {
+    margin-left: 19vh;
+  }
+
+}
+
+
+
+</style>
