@@ -1,9 +1,10 @@
 ---
-import Layout from '../layouts/Layout.astro';
 import LinkButton from '../components/LinkButton.astro';
-import Background from '../components/Background.astro';
 
 import BackgroundLayout from '../layouts/BackgroundLayout.astro';
+
+
+import Wheel from '../components/Wheel.astro';
 
 
 
@@ -35,6 +36,7 @@ try {
 		: <LinkButton href="/spin" newpage arrow>enter roulette</LinkButton>
 	}
 
+	<Wheel wheelChoice="camera"></Wheel>
 
 </div>
 </BackgroundLayout>
