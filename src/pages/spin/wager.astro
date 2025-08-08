@@ -1,11 +1,8 @@
 ---
-import InsideLayout from '../layouts/InsideLayout.astro';
+import InsideLayout from '../../layouts/InsideLayout.astro';
 
-import LinkButton from '../components/LinkButton.astro';
-
-import { requireUser, redirectToLogin } from '../lib/auth.js';
-import { userWager } from '../lib/airtable.js';
-import { cameraChoices } from '../lib/data.js';
+import { requireUser, redirectToLogin } from '../../lib/auth.js';
+import { userWager } from '../../lib/airtable.js';
 
 let userData;
 
@@ -20,7 +17,7 @@ try {
 
 var user = userData.fields;
 
-
+// if user wagered already for this round - redirect to dashboard
 
 ---
 
@@ -29,16 +26,9 @@ var user = userData.fields;
 
 
 
-
-<main>
-<p>welcome, {user.name}! <img class="avatar" src={user.avatar}></img></p>
-<p>the first spin begins on august 8.</p>
-<p></p>
-<p>you currently have 10 chips.</p>
-
-
-<LinkButton href="/spin/wager" arrow>start the round</LinkButton>
-
+<button onclick=`chooseWager("1.5x")`>test</button>
+<button onclick=`chooseWager("2x")`>test</button>
+<button onclick=`chooseWager("3x")`>test</button>
 
 </main>
 
@@ -73,15 +63,15 @@ async function chooseWager(choice) {
   });
 
   const data = await res.json();
-  // if successful, spin immediately?
-  // so the data gotten back should be the result of the three spins.
+
   console.log(data);
   console.log("spun!")
+
+  if (data == "success") {
+    window.location.href = '/spin/wheel';
+  }
+
 }
 
-async function respin(){
-
-
-}
 
 </script>

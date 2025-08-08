@@ -1,0 +1,109 @@
+---
+import InsideLayout from '../../layouts/InsideLayout.astro';
+
+import LinkButton from "../../components/LinkButton.astro";
+
+import { requireUser, redirectToLogin } from '../../lib/auth.js';
+
+
+import { choices } from '../../lib/data.js';
+
+let userData;
+
+export const prerender = false;
+
+try {
+  userData = await requireUser(Astro.request.headers);
+
+} catch {
+  return redirectToLogin();
+}
+
+var user = userData.fields;
+
+
+const { wheelOption } = Astro.params;
+
+const wheelOptions = choices[wheelOption]
+// check the user spin number & whether it's already done...
+
+const totalCount = wheelOptions.length;
+const limit = Math.ceil(0.33 * totalCount);
+---
+
+
+<InsideLayout currentPage="spin">
+
+<main>
+
+
+<p>you can disable at most { limit } options</p>
+<div class="checkboxes">
+
+{
+  wheelOptions.map( (option, index ) =>
+
+  <>
+  <input type="checkbox" id={option} name="wheelOptions" value={option} checked>
+  <label htmlFor={option}>{option}</label><br>
+  </>
+
+  )
+
+}
+
+</div>
+
+<LinkButton onclick=`spin("${wheelOption}")`>spin!</LinkButton>
+
+</main>
+
+</InsideLayout>
+
+
+<style>
+main {
+  display: flex;
+  flex-flow: column;
+  justify-content: center;
+  height: 100%;
+}
+
+
+</style>
+
+
+<script client:load>
+
+
+
+async function spin(wheelOption) {
+  console.log("DJFKHJSDG");
+
+  const checkedBoxes = Array.from(document.querySelectorAll('input[name="wheelOptions"]:checked'));
+
+
+  const selectedOptions = checkedBoxes.map(box => box.value);
+
+
+  fetch('/api/spin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ selectedOptions, wheelOption }),
+  })
+  .then(res => res.json())
+  .then(data => {
+    console.log('Spin result:', data);
+
+  })
+  .catch(err => {
+    console.error('Error:', err);
+  });
+}
+
+
+async function respin(){
+
+}
+
+</script>

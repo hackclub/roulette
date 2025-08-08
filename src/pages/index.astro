@@ -377,7 +377,6 @@ const range_offset = -300
 foreground.addEventListener('scroll', () => {
   const rect = explain.getBoundingClientRect();
   const y = rect.top; // distance from top of viewport
-  console.log('foreground Y in viewport:', y);
 
 
   var opac = - ((y + range_offset)/(range*2)) * opac_max;
@@ -385,7 +384,6 @@ foreground.addEventListener('scroll', () => {
   opac = Math.max(opac, 0)
   dim.style.opacity = opac;
 
-  console.log(dim.style.opacity);
 });
 
 

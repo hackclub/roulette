@@ -25,7 +25,6 @@ export async function requireUser(headers) {
   const token = getTokenFromCookies(headers);
   const decoded = verifyJwt(token);
 
-  console.log(decoded);
 
   const user = await getUserBySlackId(decoded.userId);
 

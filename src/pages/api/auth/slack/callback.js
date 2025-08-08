@@ -113,7 +113,7 @@ export async function GET({ request }) {
   return new Response(null, {
     status: 302,
     headers: {
-      'Set-Cookie': `token=${yourSignedJwt}; HttpOnly; Path=/; Max-Age=3600; SameSite=Lax`,
+      'Set-Cookie': `token=${yourSignedJwt}; HttpOnly; Path=/; Max-Age=3024000; SameSite=Lax`,
       'Location': '/spin'
     },
   });
