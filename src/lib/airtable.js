@@ -18,6 +18,18 @@ export async function getUserBySlackId(slackId) {
   return records[0];
 }
 
+export async function getUserRound(slackId, roundNumber) {
+  const userRoundId = slackId + roundNumber;
+
+  const records = await base('UserRounds')
+    .select({
+      filterByFormula: `{userRoundId} = "${userRoundId}"`,
+      maxRecords: 1,
+    })
+    .firstPage();
+
+    return records[0];
+}
 
 export async function createOrUpdateUser({ slackId, name, avatar, email}) {
   const existingUser = await getUserBySlackId(slackId);
@@ -45,13 +57,9 @@ const currentRound = 1;
 export async function isWageredForCurrentRound({ userId }) {
   const currentRound = getCurrentRound();
 
-  console.log("CHECKING ")
-  console.log(userId);
   const user = await getUserBySlackId(userId);
 
   if (user) {
-    console.log(user.fields);
-    console.log(user.fields.UserRounds)
     if (!user.fields.UserRounds) {
       return false;
     }
@@ -80,26 +88,59 @@ export async function userWager({ slackId, wagerChoice, wagerAmount }) {
 }
 
 
+export async function isSpunForCurrentWheelRound({ slackId, wheelOption }) {
+  console.log(slackId, wheelOption)
+  const currentRound = getCurrentRound();
+  const wheelOptionCaps = capitalise(wheelOption);
 
 
-export async function userSpinWheel({ slackId }) {
-  const userRecord = await requireUser(slackId);
 
-  if (userRecord) {
-    if (userRecord.UserRounds) {
+  const userRound = await getUserRound(slackId, currentRound);
 
-    }else {
-      const spin = await base('Spins').create([
-        {
-          fields: {
-            roundNumber: currentRound,
-            userRecord: [userRecord.id]
-          }
-        }
-      ]);
+
+  if (userRound) {
+    var userRoundInfo = userRound.fields;
+
+    if (userRoundInfo[`spin${wheelOptionCaps}`]) {
+      return true
+
     }
+    else {
+      return false
+    }
+    console.log(userRoundInfo);
+    console.log("CHECKINGCHECKING")
   }
+  return true
+
+}
 
 
+export async function userSpinWheel(slackId, selectedOptions, wheelOption) {
+  const wheelOptionName = `spin${capitalise(wheelOption)}`
+  const spinResult = choose(selectedOptions);
+  const currentRound = getCurrentRound();
 
+  const userRound = await getUserRound(slackId, currentRound);
+
+
+  const updateSpin = await base('UserRounds').update(userRound.id, {
+    [wheelOptionName]: spinResult,
+  });
+
+  return spinResult;
+
+}
+
+
+function capitalise(word){
+  return word[0].toUpperCase() + word.slice(1).toLowerCase();
+
+
+}
+
+
+function choose(choices) {
+  var index = Math.floor(Math.random() * choices.length);
+  return choices[index];
 }

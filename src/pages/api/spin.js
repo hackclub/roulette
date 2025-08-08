@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { recordSpin, isWageredForCurrentRound, userWager } from '../../lib/airtable.js';
+import { isSpunForCurrentWheelRound, userSpinWheel } from '../../lib/airtable.js';
 import { getCurrentRound, isSelectedCountOk } from '../../lib/data.js';
 import { getTokenFromCookies, verifyJwt } from '../../lib/auth.js';
 
@@ -22,38 +22,27 @@ export async function POST({ request }) {
 
   const { selectedOptions, wheelOption } = await request.json();
 
+  // first check if user has spinned already.
+
+
+
+  var check = await isSpunForCurrentWheelRound({
+    "slackId": payload.userId,
+    "wheelOption": wheelOption });
+
+  if (check == true) {
+    return new Response('Already spun', { status: 401 });
+
+  }
+
   var selectedOk = isSelectedCountOk(selectedOptions, wheelOption);
 
-  if (selectedOk) {
-    // do the spinning
-  } else {
+
+  if (!selectedOk) {
     return new Response('Invalid selection', { status: 401 });
   }
-  //
-  //
-  //
-  // const { wagerChoice, wagerAmount } = await request.json();
-  //
-  // const isWageredAlready = await isWageredForCurrentRound({ "userId": payload.userId })
-  //
-  // if (isWageredAlready) {
-  //   console.log("BOO")
-  // } else {
-  //   userWager({
-  //     'slackId': payload.userId,
-  //     'wagerChoice': wagerChoice,
-  //     'wagerAmount': wagerAmount
-  //
-  //   })
-  // }
-  //
-  // console.log(wagerChoice, wagerAmount);
-  // console.log("WAGER.JS POST");
 
+  var spinResult = await userSpinWheel(payload.userId, selectedOptions, wheelOption);
 
-
-  //
-  // const spin = await recordWager(payload.userId, result);
-
-  return new Response(JSON.stringify("yay"), { status: 200 });
+  return new Response(JSON.stringify(spinResult), { status: 200 });
 }

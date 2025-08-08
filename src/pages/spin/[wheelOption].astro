@@ -27,7 +27,13 @@ const { wheelOption } = Astro.params;
 const wheelOptions = choices[wheelOption]
 // check the user spin number & whether it's already done...
 
-const totalCount = wheelOptions.length;
+var totalCount;
+try {
+  totalCount = wheelOptions.length;
+}
+catch {
+  return redirectToLogin();
+}
 const limit = Math.ceil(0.33 * totalCount);
 ---
 
@@ -78,7 +84,6 @@ main {
 
 
 async function spin(wheelOption) {
-  console.log("DJFKHJSDG");
 
   const checkedBoxes = Array.from(document.querySelectorAll('input[name="wheelOptions"]:checked'));
 
