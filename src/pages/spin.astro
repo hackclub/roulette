@@ -4,7 +4,7 @@ import InsideLayout from '../layouts/InsideLayout.astro';
 import LinkButton from '../components/LinkButton.astro';
 
 import { requireUser, redirectToLogin } from '../lib/auth.js';
-import { userWager } from '../lib/airtable.js';
+import { getUserRound } from '../lib/airtable.js';
 import { cameraChoices } from '../lib/data.js';
 
 let userData;
@@ -21,6 +21,12 @@ try {
 var user = userData.fields;
 
 
+const round = await getUserRound(user.slackId, 1);
+const fields = round?.fields || {};
+const pickedCamera = fields.spinCamera || '—';
+const pickedGameplay = fields.spinGameplay || '—';
+const pickedSetting = fields.spinSetting || '—';
+
 
 ---
 
@@ -29,16 +35,19 @@ var user = userData.fields;
 
 
 
-
 <main>
-<p>welcome, {user.name}! <img class="avatar" src={user.avatar}></img></p>
-<p>the first spin begins on august 8.</p>
-<p></p>
-<p>you currently have 10 chips.</p>
+  <p>welcome, {user.name}! <img class="avatar" src={user.avatar}></img></p>
 
+  <p>Your spins this round:</p>
+  <p><strong>camera</strong>: {pickedCamera}</p>
+  <p><strong>gameplay</strong>: {pickedGameplay}</p>
+  <p><strong>setting</strong>: {pickedSetting}</p>
 
-<LinkButton href="/spin/wager" arrow>start the round</LinkButton>
-
+  {!(pickedCamera !== '—' || pickedGameplay !== '—' || pickedSetting !== '—') && (
+    <div style="margin-top: 16px;">
+      <LinkButton href="/spin/wager" arrow>start the round</LinkButton>
+    </div>
+  )}
 
 </main>
 

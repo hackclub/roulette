@@ -67,6 +67,21 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
+function prepareNextButton(nextPath, label){
+  const btn = document.querySelector('.linkbutton');
+  if (!btn) return;
+  // Remove previous listeners by cloning
+  const newBtn = btn.cloneNode(true);
+  btn.parentNode.replaceChild(newBtn, btn);
+  // Update label
+  newBtn.textContent = label || 'ok nice, go next';
+  // Navigate on click
+  newBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    window.location.href = nextPath;
+  });
+}
+
 function updateDetails(value) {
 
   /* const detailBox = document.getElementById('detail-box');
@@ -360,6 +375,15 @@ function createWheel(selectedOptions, winningOption) {
 
        // Show the details for the winning option
        showWinnerDetails(winningOption);
+
+        // Update the button to go to the next step based on current wheel
+        if (wheelOption === 'camera') {
+          prepareNextButton('/spin/gameplay', 'ok nice, go next');
+        } else if (wheelOption === 'gameplay') {
+          prepareNextButton('/spin/setting', 'ok nice, last one');
+        } else if (wheelOption === 'setting') {
+          prepareNextButton('/spin', 'see summary');
+        }
      }, 3000); // Wait for 3 seconds (duration of spin animation)
   }, 100);
 }
@@ -373,7 +397,12 @@ function createWheel(selectedOptions, winningOption) {
 
 
 <div>
-<h1>wheel 1 of 3: {wheelOption}</h1>
+<h1>{(() => {
+  if (wheelOption === 'camera') return 'wheel 1 of 3: camera';
+  if (wheelOption === 'gameplay') return 'wheel 2 of 3: gameplay';
+  if (wheelOption === 'setting') return 'wheel 3 of 3: setting';
+  return `wheel: ${wheelOption}`;
+})()}</h1>
 
 
 <div style="display: flex;">
