@@ -19,7 +19,7 @@ try {
   return redirectToLogin();
 }
 
-var user = userData.fields;
+// user context available if needed
 
 
 const { wheelOption } = Astro.params;
@@ -51,19 +51,13 @@ const limit = Math.ceil(0.33 * totalCount);
 
 document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.hover-option').forEach(el => {
-    el.addEventListener('mouseenter', () => {
-      const option = el.dataset.option;
-      updateDetails(option);
-    });
+    el.addEventListener('mouseenter', () => updateDetails(el.dataset.option));
   });
 
-  document.querySelectorAll('.linkbutton').forEach(el => {
-    el.addEventListener('click', () => {
-      spin(wheelOption);
-    });
-  });
-
-
+  const spinBtn = document.querySelector('.linkbutton');
+  if (spinBtn) {
+    spinBtn.addEventListener('click', () => spin(wheelOption));
+  }
 });
 
 
@@ -83,22 +77,24 @@ function prepareNextButton(nextPath, label){
 }
 
 function updateDetails(value) {
+  const titleEl = document.getElementById('detail-title');
+  const descEl = document.getElementById('detail-description');
+  if (!titleEl || !descEl) return;
+  titleEl.textContent = value;
+  descEl.textContent = wheelOptions[value]?.description || '';
 
-  /* const detailBox = document.getElementById('detail-box');
-  console.log(value);
-  var item = value; */
-
-  document.getElementById('detail-title').innerHTML = value;
-
-  document.getElementById('detail-description').innerHTML = wheelOptions[value].description;
-
-  const examples = Object.keys(wheelOptions[value].examples);
-
-  document.getElementById('detail-ex1').src = wheelOptions[value].examples[examples[0]];
-
-  document.getElementById('detail-ex2').src = wheelOptions[value].examples[examples[1]];
-  document.getElementById('detail-ex3').src = wheelOptions[value].examples[examples[2]];
-  document.getElementById('detail-ex4').src = wheelOptions[value].examples[examples[3]];
+  const examples = Object.keys(wheelOptions[value]?.examples || {});
+  for (let i = 1; i <= 4; i++) {
+    const img = document.getElementById(`detail-ex${i}`);
+    if (!img) continue;
+    if (examples[i - 1]) {
+      img.src = wheelOptions[value].examples[examples[i - 1]];
+      img.style.display = 'block';
+    } else {
+      img.src = '';
+      img.style.display = 'none';
+    }
+  }
 }
 
 function clearDetails(){
@@ -160,16 +156,11 @@ async function spin(wheelOption) {
   })
   .then(res => res.json())
   .then(data => {
-    console.log('API response:', data);
-    console.log('Selected options:', selectedOptions);
-    console.log('Data includes check:', selectedOptions.includes(data));
-
     // Always switch to wheel view and spin, regardless of the check
     spinWheel(data);
-
   })
   .catch(err => {
-    console.error('Error:', err);
+    console.error('spin error:', err);
   });
 }
 

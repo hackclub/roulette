@@ -5,7 +5,7 @@ import LinkButton from '../components/LinkButton.astro';
 
 import { requireUser, redirectToLogin } from '../lib/auth.js';
 import { getUserRound } from '../lib/airtable.js';
-import { cameraChoices } from '../lib/data.js';
+// data import not needed here
 
 let userData;
 
@@ -66,31 +66,4 @@ main {
 </style>
 
 
-<script client:load>
-
-
-
-async function chooseWager(choice) {
-
-  const res = await fetch('/api/wager', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      wagerChoice: choice,
-      wagerAmount: 10,
-    }),
-  });
-
-  const data = await res.json();
-  // if successful, spin immediately?
-  // so the data gotten back should be the result of the three spins.
-  console.log(data);
-  console.log("spun!")
-}
-
-async function respin(){
-
-
-}
-
-</script>
+<!-- no client scripts needed on summary page -->

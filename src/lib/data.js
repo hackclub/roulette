@@ -258,6 +258,10 @@ export const choices = {
 }
 
 
+export const prizes = [
+  
+]
+
 
 
 export function isSelectedCountOk(selectedOptions, wheelOption ) {
