@@ -25,9 +25,16 @@ export async function POST({ request }) {
 
   const { wagerChoice, wagerAmount } = await request.json();
 
+  // Basic input validation
+  const allowedChoices = new Set(['1.5x', '2x', '3x']);
+  const amt = Number(wagerAmount);
+  if (!allowedChoices.has(String(wagerChoice)) || !Number.isFinite(amt) || amt <= 0) {
+    return new Response('Invalid wager input', { status: 400 });
+  }
+
   const isWageredAlready = await isWageredForCurrentRound({ "userId": payload.userId })
 
-  const hasEnough = await hasEnoughChips(payload.userId, wagerAmount)
+  const hasEnough = await hasEnoughChips(payload.userId, amt)
 
   if (isWageredAlready) {
     return new Response('Wagered already', { status: 401 });
@@ -37,11 +44,11 @@ export async function POST({ request }) {
     await userWager({
       'slackId': payload.userId,
       'wagerChoice': wagerChoice,
-      'wagerAmount': wagerAmount
+      'wagerAmount': amt
 
     })
     // Deduct chips immediately on wagering
-    await decrementUserChips(payload.userId, wagerAmount);
+    await decrementUserChips(payload.userId, amt);
   }
 
   return new Response(JSON.stringify("success"), { status: 200 });

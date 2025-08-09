@@ -56,17 +56,10 @@ const currentRound = 1;
 
 export async function isWageredForCurrentRound({ userId }) {
   const currentRound = getCurrentRound();
-
-  const user = await getUserBySlackId(userId);
-
-  if (user) {
-    if (!user.fields.UserRounds) {
-      return false;
-    }
-    else {
-      return true
-    }
-  }
+  const userRound = await getUserRound(userId, currentRound);
+  if (!userRound) return false;
+  const f = userRound.fields || {};
+  return Boolean(f.wagerChoice && f.wagerAmount);
 }
 
 // this assumes that it has already checked that the wager is not yet done for the current round
@@ -85,6 +78,37 @@ export async function userWager({ slackId, wagerChoice, wagerAmount }) {
     'wagerChoice': wagerChoice,
     'wagerAmount': wagerAmount
   });
+}
+
+export async function resetRoundWithRespin(slackId) {
+  // expects: Users table has a numeric field `respinTokens`
+  const currentRound = getCurrentRound();
+  const user = await getUserBySlackId(slackId);
+  if (!user) throw new Error('user not found');
+  const tokens = Number(user.fields.respinTokens || 0);
+  if (tokens <= 0) {
+    throw new Error('No respin tokens');
+  }
+
+  const userRound = await getUserRound(slackId, currentRound);
+  if (!userRound) throw new Error('No round to reset');
+
+  // refund wager chips
+  const wagerAmount = Number(userRound.fields.wagerAmount || 0);
+  const currentChips = Number(user.fields.chips || 0);
+  const currentRespins = Number(user.fields.numberOfRespins || 0);
+
+  // decrement token, increment numberOfRespins, and optionally refund chips
+  await base('Users').update(user.id, {
+    respinTokens: tokens - 1,
+    numberOfRespins: currentRespins + 1,
+    chips: currentChips + wagerAmount,
+  });
+
+  // remove the round entry entirely
+  await base('UserRounds').destroy(userRound.id);
+
+  return { success: true, remainingTokens: tokens - 1, refunded: wagerAmount };
 }
 
 

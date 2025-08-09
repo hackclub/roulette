@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
-import { isSpunForCurrentWheelRound, userSpinWheel } from '../../lib/airtable.js';
-import { getCurrentRound, isSelectedCountOk } from '../../lib/data.js';
+import { isSpunForCurrentWheelRound, userSpinWheel, resetRoundWithRespin } from '../../lib/airtable.js';
+import { getCurrentRound, isSelectedCountOk, areSelectedOptionsValid } from '../../lib/data.js';
 import { getTokenFromCookies, verifyJwt } from '../../lib/auth.js';
 
 export async function POST({ request }) {
@@ -20,7 +20,16 @@ export async function POST({ request }) {
 
 
 
-  const { selectedOptions, wheelOption } = await request.json();
+  const { selectedOptions, wheelOption, respin } = await request.json();
+
+  if (respin === true) {
+    try {
+      const result = await resetRoundWithRespin(payload.userId);
+      return new Response(JSON.stringify(result), { status: 200 });
+    } catch (e) {
+      return new Response(String(e.message || 'Respin failed'), { status: 400 });
+    }
+  }
 
   // first check if user has spinned already.
 
@@ -35,6 +44,10 @@ export async function POST({ request }) {
 
   }
 
+  // Validate selected options against canonical list and count limit
+  if (!areSelectedOptionsValid(selectedOptions, wheelOption)) {
+    return new Response('Invalid selection', { status: 401 });
+  }
   var selectedOk = isSelectedCountOk(selectedOptions, wheelOption);
 
 

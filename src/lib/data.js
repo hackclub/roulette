@@ -276,3 +276,15 @@ export function isSelectedCountOk(selectedOptions, wheelOption) {
 
   return selectedOptions.length >= totalLeft;
 }
+
+export function areSelectedOptionsValid(selectedOptions, wheelOption) {
+  const wheelChoices = choices[wheelOption];
+  if (!wheelChoices) return false;
+
+  const validSet = new Set(
+    Array.isArray(wheelChoices) ? wheelChoices : Object.keys(wheelChoices)
+  );
+
+  // Every selected option must exist in the valid set
+  return Array.isArray(selectedOptions) && selectedOptions.every(opt => validSet.has(opt));
+}
