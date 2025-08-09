@@ -5,7 +5,7 @@ import LinkButton from '../components/LinkButton.astro';
 
 import { requireUser, redirectToLogin } from '../lib/auth.js';
 import { getUserRound } from '../lib/airtable.js';
-// data import not needed here
+import { getCurrentRound } from '../lib/data.js';
 
 let userData;
 
@@ -21,11 +21,39 @@ try {
 var user = userData.fields;
 
 
-const round = await getUserRound(user.slackId, 1);
+const roundNumber = getCurrentRound();
+const round = await getUserRound(user.slackId, roundNumber);
 const fields = round?.fields || {};
 const pickedCamera = fields.spinCamera || '—';
 const pickedGameplay = fields.spinGameplay || '—';
 const pickedSetting = fields.spinSetting || '—';
+const wagerChoice = fields.wagerChoice || '—';
+const wagerAmount = (fields.wagerAmount ?? '—');
+const numericWager = typeof wagerAmount === 'number' ? wagerAmount : 0;
+const remainingChips = (user.chips ?? 0) - numericWager;
+
+const hasCamera = pickedCamera !== '—';
+const hasGameplay = pickedGameplay !== '—';
+const hasSetting = pickedSetting !== '—';
+const hasWager = wagerChoice !== '—';
+
+// Derive wager display details
+const multiplier = typeof wagerChoice === 'string' ? wagerChoice : String(wagerChoice || '—');
+const multiplierToHours = { '1.5x': '5h', '2x': '10h', '3x': '25h' };
+const hourTarget = multiplierToHours[multiplier] || '—';
+
+let nextHref = '';
+let nextLabel = '';
+if (!hasCamera && (wagerChoice !== '—')) {
+  nextHref = '/spin/camera';
+  nextLabel = 'continue: wheel 1 of 3 (camera)';
+} else if (hasCamera && !hasGameplay) {
+  nextHref = '/spin/gameplay';
+  nextLabel = 'continue: wheel 2 of 3 (gameplay)';
+} else if (hasCamera && hasGameplay && !hasSetting) {
+  nextHref = '/spin/setting';
+  nextLabel = 'continue: wheel 3 of 3 (setting)';
+}
 
 
 ---
@@ -36,19 +64,48 @@ const pickedSetting = fields.spinSetting || '—';
 
 
 <main>
-  <p>welcome, {user.name}! <img class="avatar" src={user.avatar}></img></p>
-
-  <p>Your spins this round:</p>
-  <p><strong>camera</strong>: {pickedCamera}</p>
-  <p><strong>gameplay</strong>: {pickedGameplay}</p>
-  <p><strong>setting</strong>: {pickedSetting}</p>
-
-  {!(pickedCamera !== '—' || pickedGameplay !== '—' || pickedSetting !== '—') && (
-    <div style="margin-top: 16px;">
-      <LinkButton href="/spin/wager" arrow>start the round</LinkButton>
+  <section class="topbar">
+    <div class="profile">
+      <img class="avatar" src={user.avatar} alt="avatar" />
+      <span class="username">{user.name}</span>
     </div>
-  )}
+    <div class="stats">
+      <span>chips: <strong>{remainingChips}</strong></span>
+      <span>round: <strong>{roundNumber}</strong></span>
+    </div>
+  </section>
 
+  <section class="summary">
+    <h2>your spins this round</h2>
+    <div class="summary-row">
+      <div class="summary-card"><span class="label">camera</span><span class="value">{pickedCamera}</span></div>
+      <div class="summary-card"><span class="label">gameplay</span><span class="value">{pickedGameplay}</span></div>
+      <div class="summary-card"><span class="label">setting</span><span class="value">{pickedSetting}</span></div>
+    </div>
+    <h2 style="margin-top:16px;">your wager</h2>
+    <div class="summary-row">
+      <div class="summary-card"><span class="label">hour target</span><span class="value">{hourTarget}</span></div>
+      <div class="summary-card"><span class="label">multiplier</span><span class="value">{multiplier}</span></div>
+      <div class="summary-card"><span class="label">chips wagered</span><span class="value">{numericWager}</span></div>
+    </div>
+    <div class="cta" style="margin-top: 16px;">
+      {!hasWager && (
+        <LinkButton href="/spin/wager" arrow>start spinning now</LinkButton>
+      )}
+      {hasWager && nextHref && (
+        <LinkButton href={nextHref} arrow>{nextLabel}</LinkButton>
+      )}
+    </div>
+  </section>
+
+  <section class="submit" style="padding-top: 40px;">
+  <details>
+    <summary>submissions?</summary>
+  <p>submissions will open next wednesday!</p>
+  <p>make sure that your project is tracked on hackatime.</p>
+  <p>drawing or making assets? take screenshots every hour or so and note down how long you spent. even better if you have eg. procreate project hour spent screenshots!</p>
+</details>
+  </section>
 </main>
 
 </InsideLayout>
@@ -62,6 +119,38 @@ main {
   height: 100%;
 }
 
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 8px 0 24px 0;
+}
+
+.profile { display: flex; align-items: center; gap: 10px; }
+.username { font-weight: 600; }
+
+.stats { display: flex; gap: 20px; }
+
+.cta { margin-top: 16px; }
+
+.summary h2 { margin: 0 0 12px 0; font-size: 1.2em; }
+.summary-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.summary-card {
+  border: 2px solid var(--pink);
+  border-radius: 10px;
+  padding: 10px 14px;
+  min-width: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.summary-card .label { opacity: 0.85; }
+.summary-card .value { font-weight: 700; color: var(--pink); margin-left: 12px; }
 
 </style>
 

@@ -2,6 +2,7 @@
 import Layout from '../../layouts/Layout.astro';
 
 import LinkButton from "../../components/LinkButton.astro";
+import InlineArrow from "../../components/InlineArrow.astro";
 
 import { requireUser, redirectToLogin } from '../../lib/auth.js';
 
@@ -154,9 +155,17 @@ async function spin(wheelOption) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ selectedOptions, wheelOption }),
   })
-  .then(res => res.json())
-  .then(data => {
-    // Always switch to wheel view and spin, regardless of the check
+  .then(async (res) => {
+    if (!res.ok) {
+      const msg = await res.text();
+      console.warn('spin rejected:', msg);
+      alert(msg || 'Invalid selection');
+      return null;
+    }
+    return res.json();
+  })
+  .then((data) => {
+    if (!data) return; // do not spin on invalid selection
     spinWheel(data);
   })
   .catch(err => {
@@ -386,6 +395,8 @@ function createWheel(selectedOptions, winningOption) {
 
 <main id="main">
 
+<a href="/spin"><InlineArrow reversed pink /> back to dashboard</a>
+
 
 <div>
 <h1>{(() => {
@@ -400,7 +411,7 @@ function createWheel(selectedOptions, winningOption) {
 
 
 <div id="checkboxes" class="checkboxes" style="width: 50%;" client:load>
-
+<p>before spinning, remove options that you aren't interested in!</p>
 <p>you can disable at most { limit } options</p>
 
 {
@@ -461,7 +472,7 @@ main {
   flex-flow: column;
   justify-content: center;
   height: 100%;
-  padding: 30px;
+  padding: 40px;
 
 }
 
@@ -479,6 +490,19 @@ main {
   object-fit: contain;
   display: inline-block;
   margin: 4px;
+}
+
+.hover-option {
+  position: relative;
+  transition: 0.2s;
+  left: 0;
+  opacity: 0.8;
+}
+
+.hover-option:hover {
+  left: 16px;
+  opacity: 1;
+
 }
 
 #wheel {

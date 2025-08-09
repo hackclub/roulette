@@ -264,17 +264,15 @@ export const prizes = [
 
 
 
-export function isSelectedCountOk(selectedOptions, wheelOption ) {
-  const totalCount = choices[wheelOption].length;
+export function isSelectedCountOk(selectedOptions, wheelOption) {
+  const wheelChoices = choices[wheelOption];
+  if (!wheelChoices) return false;
+  const totalCount = Array.isArray(wheelChoices)
+    ? wheelChoices.length
+    : Object.keys(wheelChoices).length;
+
   const limit = Math.ceil(0.33 * totalCount);
   const totalLeft = totalCount - limit;
-  if (selectedOptions.length < totalLeft) {
-    return false
-  }
-  else {
-    console.log("SELECTION OK")
-    return true
-  }
 
-
+  return selectedOptions.length >= totalLeft;
 }
