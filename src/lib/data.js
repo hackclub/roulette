@@ -183,36 +183,76 @@ export const choices = {
     },
     "setting": {
         "nature": {
-            "description": "",
-            "examples": {}
+            "description": "wild nature and landscapes — think forests, mountains, beaches.",
+            "examples": {
+              "terraria": "https://i.ytimg.com/vi/90dpX0ndteg/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLDqyOYZTVeq6TmAvqLqGIVGweCVWQ",
+              "a short hike": "https://www.heypoorplayer.com/wp-content/uploads/2020/07/highres1.png",
+              "don't starve": "https://lh3.googleusercontent.com/YflCdv6q_V1tZV3K-jiOhGE9FRTl_434nuxn2HkNC-3KbQ1ZI05qBQfOSbvDpFWxGKACz4H4VB_-oi_qq_rcFcXYh3MO3MOjljpxbK3PjGOyRWCVJ1Kr8_rYpERu4w",
+              "celeste": "https://eegamesmart.co.uk/g/s/2171/celeste_2171.jpg"
+            }
         },
         "urban": {
-            "description": "",
-            "examples": {}
+            "description": "a setting in a town, city, or otherwise urban environment. buildings!",
+            "examples": {
+              "gang beasts": "https://images.igdb.com/igdb/image/upload/t_original/vbxzn6lzpc8ggwrdnv1a.png",
+              "overcooked": "https://cdn2.unrealengine.com/Diesel%2Fproduct%2Fovercooked%2Fhome%2FKitchen1-1920x1080-aeb19d379c9d394479acdbdbfc7ae0335bda83fe.jpg",
+              "night in the woods": "https://oberlinreview.org/wp-content/uploads/2017/03/Game-Image-by-Avi-Vogel-WEB-900x506.jpg",
+              "stardew valley": "https://www.allkeyshop.com/blog/wp-content/uploads/Stardew-Valley-Sells-41-Million-Copies-1024x536.webp"
+            }
         },
         "futuristic": {
-            "description": "",
-            "examples": {}
+            "description": "high-tech worlds of advanced science - scifi, cyberpunk, space.",
+            "examples": {
+              "katana zero": "https://cdn.wccftech.com/wp-content/uploads/2025/04/Katana-Zero-DLC-1456x819.jpg",
+              "outer wilds": "https://www.pluggedin.com/wp-content/uploads/2020/01/Outer_Wilds_Large-1024x587.jpg",
+              "hyper light drifter": "https://i.ytimg.com/vi/qqZZ52tGtdY/maxresdefault.jpg",
+              "echo": "https://i.ytimg.com/vi/T5XBjnLKEw0/maxresdefault.jpg"
+            }
         },
         "dystopian": {
-            "description": "",
-            "examples": {}
+            "description": "post-apocalyptic or dystopian.",
+            "examples": {
+              "rain world": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRvh4Vy-C453RfPDsdyBMbvH8EHQ_U4E_Nm1WoRpk4HmB_3YlFRP78kSOQN_XeY87itE84&usqp=CAU",
+              "death stranding": "https://cdn.shopify.com/s/files/1/1212/8002/products/35-lakeknot-center_f34b1607-53a5-4859-8425-bb043f0e1d3b.jpg?v=1650613556",
+              "ashen": "https://assets1.ignimgs.com/thumbs/2019/12/10/3-c7201392e7cd0dd873fe7767cc836c3c-1575995416/frame_0001.jpg",
+              "frostpunk": "https://images-rsg.storage.googleapis.com/wp-content/uploads/2024/10/City-Building-in-Frostpunk-2.jpg"
+            }
         },
         "surreal": {
-            "description": "",
-            "examples": {}
+            "description": "slightly bizzare and dreamlike and strange. a little unexpected.",
+            "examples": {
+              "superliminal": "https://www.washingtonpost.com/wp-apps/imrs.php?src=https://arc-anglerfish-washpost-prod-washpost.s3.amazonaws.com/public/7GYKMHT4SZB63FJ5YLCPBY7SAY.jpg&w=800&h=600",
+              "viewfinder": "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/1382070/ss_9c9a0cdfda4c09caa0e01db6d78dbafcae657291.1920x1080.jpg?t=1752754630",
+              "antichamber": "https://pixelblogpost.wordpress.com/wp-content/uploads/2014/03/the-game-is-unlike-anything-youve-ever-seen.png",
+              "baba is you": "https://play-lh.googleusercontent.com/ZWejQHB_ihAyynSl4BF3BYRNNkNmCtqDvROv_hZI0RS1gykfFBWYhk-3Wj2xHHEec2k=w526-h296-rw"
+            }
         },
         "digital": {
-            "description": "",
-            "examples": {}
+            "description": "environments inside computers or simulated realities.",
+            "examples": {
+              "oneshot": "https://nintendoeverything.com/wp-content/uploads/OneShot-World-Machine-Edition-gameplay.jpg",
+              "trombone champ": "https://images.axios.com/z8-oLe0B3Qj5eYLHJb-9eLtX_4E=/2022/10/16/1665952378053.jpg",
+              "hypnospace outlaw": "https://assets.nintendo.com/image/upload/q_auto:best/f_auto/dpr_2.0/ncom/software/switch/70010000027941/c4c87f50eb5666c449e3c09bfcd28681b45d1dae8c8fa779dd2d59b5a1180433",
+              "main frames": "https://platform.theverge.com/wp-content/uploads/sites/2/2025/02/ss_e2538881d058e018c9b3c14c0039c6d44fb3618a.jpg?quality=90&strip=all&crop=7.8125,0,84.375,100"
+            }
         },
         "fantasy": {
-            "description": "",
-            "examples": {}
+            "description": "magical realms, mythical creatures, maybe magic!",
+            "examples": {
+              "gris": "https://colourmeread.com/wp-content/uploads/2022/03/gris-yellow.jpg",
+              "wandersong": "https://gaming-age.com/wp-content/uploads/2018/10/wandersong-2.jpg",
+              "hollow knight": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRGUFWTL6-k_BOJrvMzj3bQ60phj9aExYf3IQ&s",
+              "tunic": "https://assets.nintendo.com/image/upload/ar_16:9,b_auto:border,c_lpad/b_white/f_auto/q_auto/dpr_1.5/c_scale,w_500/ncom/software/switch/70010000045589/5b4ab632c1ef7a39cc763615163fa025a94d16f9e4a799148a1274dfcd9320f9"
+            }
         },
         "non-world": {
-            "description": "",
-            "examples": {}
+            "description": "a blank box, or abstract and geometric.",
+            "examples": {
+              "geometry dash": "https://m.media-amazon.com/images/I/A1xBx7dAE1L.png",
+              "mini metro": 'https://dinopoloclub.com/wp-content/uploads/2023/12/Miniversary_Warsaw-1.png',
+              "beat saber": "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/620980/ss_1881ae4f153faf0d1ccecca60fbdac5b43ad57eb.1920x1080.jpg?t=1749135147",
+              "puyo puyo tetris": "https://ztgd.com/wp-content/uploads/2017/05/puyopuyotetris_07.jpg"
+            }
         }
     }
 }
