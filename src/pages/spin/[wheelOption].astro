@@ -123,7 +123,7 @@ function showWinnerDetails(winningOption) {
   detailBox.style.visibility = 'visible';
 
   // Populate content
-  detailTitle.innerHTML = `your camera option: ${winningOption}`;
+  detailTitle.innerHTML = `your ${wheelOption} option: ${winningOption}`;
   detailDescription.innerHTML = wheelOptions[winningOption]?.description || '';
 
   const examples = Object.keys(wheelOptions[winningOption]?.examples || {});
