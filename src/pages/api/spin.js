@@ -45,4 +45,6 @@ export async function POST({ request }) {
   var spinResult = await userSpinWheel(payload.userId, selectedOptions, wheelOption);
 
   return new Response(JSON.stringify(spinResult), { status: 200 });
+
+
 }

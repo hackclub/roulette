@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { recordSpin, isWageredForCurrentRound, userWager } from '../../lib/airtable.js';
+import { isWageredForCurrentRound, userWager, hasEnoughChips } from '../../lib/airtable.js';
 import { getCurrentRound } from '../../lib/data.js';
 import { getTokenFromCookies, verifyJwt } from '../../lib/auth.js';
 
@@ -27,9 +27,13 @@ export async function POST({ request }) {
 
   const isWageredAlready = await isWageredForCurrentRound({ "userId": payload.userId })
 
+  const hasEnough = await hasEnoughChips(payload.userId, wagerAmount)
+
   if (isWageredAlready) {
-    console.log("BOO")
-  } else {
+    return new Response('Wagered already', { status: 401 });
+  } else if (!hasEnough){
+    return new Response('Not enough chips', { status: 401 });
+  }else {
     userWager({
       'slackId': payload.userId,
       'wagerChoice': wagerChoice,
@@ -39,4 +43,7 @@ export async function POST({ request }) {
   }
 
   return new Response(JSON.stringify("success"), { status: 200 });
+
+
+  // go to spin wheel results, pull again from airtable.
 }

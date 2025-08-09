@@ -1,9 +1,9 @@
 
 ---
-const { fullHeight = false, offset_x = 0, offset_y = 0, rotation = 0 } = Astro.props;
+const { fullHeight = false, offset_x = 0, offset_y = 0, rotation = 0, onclick="", selected=false } = Astro.props;
 ---
 
-<div style=`position: relative; left: ${offset_x}; top: ${offset_y}; transform: rotate(${rotation}deg)` class={ fullHeight ? "outlinebox fullheight" : "outlinebox"}>
+<div style=`position: relative; left: ${offset_x}; top: ${offset_y}; transform: rotate(${rotation}deg)` class={ fullHeight ? "outlinebox fullheight" : "outlinebox"} onclick={onclick}>
 <div class="gamblebox">
 <slot />
 

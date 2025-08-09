@@ -18,11 +18,14 @@ const text_angle = `-${ -2.5 * (360 / count) + 216 }deg`
 
 
 const offsets = {
-  6: { left: 0, bottom: 40 },
+  4: { left: 20, bottom: 20 },
+  5: { left: 35, bottom: 20 },
+  6: { left: 55, bottom: 20 },
   7: { left: 70, bottom: 5 },
   8: { left: 100, bottom: -15 },
   9: { left: 140, bottom: -40 },
   10: { left: 220, bottom: -70 },
+  11: { left: 240, bottom: -70 },
   12: { left: 260, bottom: -70 }
 }
 
@@ -39,7 +42,6 @@ const text_margin_bottom = `${offsets[count].bottom}px`
   items.map( (data, index) =>
     <li style=`--count: ${index};`><div><p>{data}</p></div></li>
     )
-
 }
 
 </ul>

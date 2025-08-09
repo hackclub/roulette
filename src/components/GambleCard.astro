@@ -1,7 +1,7 @@
 ---
 import BoxAlt from '../components/BoxAlt.astro';
 
-const {hours, mult, offset_x, offset_y, rotation} = Astro.props;
+const {hours, mult, offset_x, offset_y, rotation, onclick, fullHeight} = Astro.props;
 
 const mult_img = {
   1.5: '/mult_15.png',
@@ -11,10 +11,10 @@ const mult_img = {
 
 ---
 
-<BoxAlt offset_x={offset_x} offset_y={offset_y} rotation={rotation}>
-<p>hit {hours} hours for</p>
+<BoxAlt offset_x={offset_x} offset_y={offset_y} rotation={rotation} onclick={onclick} fullHeight={fullHeight}>
+<p style="text-align: center">hit {hours} hours for</p>
 <img src={ mult_img[mult] }></img>
-<p><slot /></p>
+<p style="text-align: center;"><slot /></p>
 </BoxAlt>
 
 

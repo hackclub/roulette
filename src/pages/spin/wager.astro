@@ -1,5 +1,8 @@
 ---
-import InsideLayout from '../../layouts/InsideLayout.astro';
+import Layout from '../../layouts/Layout.astro';
+import LinkButton from "../../components/LinkButton.astro";
+import InlineArrow from '../../components/InlineArrow.astro';
+import GambleCard from '../../components/GambleCard.astro';
 
 import { requireUser, redirectToLogin } from '../../lib/auth.js';
 import { userWager } from '../../lib/airtable.js';
@@ -22,26 +25,153 @@ var user = userData.fields;
 ---
 
 
-<InsideLayout currentPage="spin">
+
+<Layout>
+
+<main>
+
+<a href="/spin"><InlineArrow reversed pink /> back to dashboard</a>
+
+<div style="text-align: center">
+<h1>wager</h1>
+
+<p>bet against yourself: how many hours can you hit?</p>
+<p>if you miss the hours, you will lose all the chips that you wager.</p>
+</div>
 
 
+<div style="width: 80%; margin: 0 auto; text-align: center;">
+  <div style="background-color: var(--black);
+      border-radius: 36px;
+      margin: 0 auto;
+      padding: 20px;
+      font-size: 0.7em;">
+  <input type="range" id="chips" name="chips" min="0" max="10" class="slider"/>
+  </div>
+  <p>wager: <span class="wager-count">5</span> chips (you currently have 10)</p>
+</div>
+<div class="choices">
 
-<button onclick=`chooseWager("1.5x")`>test</button>
-<button onclick=`chooseWager("2x")`>test</button>
-<button onclick=`chooseWager("3x")`>test</button>
+<div class="cardchoice" id="card15" onclick="selectCard('15')">
+<GambleCard hours=5 mult=1.5 fullHeight>
+<span class="wager-count">5</span><InlineArrow/><span class="wager-pt5x">7.5</span> chips
+</GambleCard>
+</div>
+
+<div class="cardchoice" id='card2' onclick="selectCard('2')">
+<GambleCard hours=10 mult=2 fullHeight>
+<span class="wager-count">5</span><InlineArrow/><span class="wager-twox">10</span> chips
+</GambleCard>
+</div>
+<div class="cardchoice" id='card3' onclick="selectCard('3')">
+<GambleCard hours=25 mult=3 fullHeight>
+<span class="wager-count">5</span><InlineArrow/><span class="wager-threex">15</span> chips
+</GambleCard>
+</div>
+</div>
+
+<div class="confirm-box">
+<p>wager <span class="wager-count">5</span> chips. if you win, you'll have <span class="final-count">?</span> total. if you lose, you'll have <span class="lose-count">5</span> total.</p>
+
+
+<p style="text-align: center;">
+<span id="confirm-button"><LinkButton onclick="confirmWager()">confirm wager</LinkButton></span></p>
+</div>
 
 </main>
 
-</InsideLayout>
+</Layout>
 
 
 <style>
+
 main {
   display: flex;
   flex-flow: column;
   justify-content: center;
   height: 100%;
+  padding: 30px;
+
 }
+
+
+
+  .choices {
+
+    margin-top: 32px;
+    display: flex;
+    width: 100%;
+    gap: 16px;
+    justify-content: center;
+
+  }
+
+  .cardchoice {
+    height: 100%;
+    display: relative;
+    transition: 0.2s;
+  }
+
+  .cardchoice.selected {
+    transform: translateY(-32px);
+  }
+
+  .cardchoice:hover:not(.selected) {
+    transform: translateY(-16px);
+  }
+
+
+  .confirm-box {
+    border: 4px solid var(--pink);
+    border-radius: 36px;
+    padding: 20px;
+    text-align: center;
+    width: 80%;
+    margin: 20px auto;
+    margin-bottom: 20px;
+  }
+
+  #confirm-button {
+  display: none;
+  margin-top: 16px;
+}
+  #confirm-button.show {
+  display: inline-block;
+}
+
+
+  .slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+
+    height: 4px;
+    background: var(--pink);
+
+  }
+
+  .slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 30px;
+    background: var(--black);
+    border: 4px solid var(--pink);
+    box-sizing: border-box;
+
+    cursor: pointer;
+
+  }
+
+  .slider::-moz-range-thumb {
+    width: 20px;
+    height: 40px;
+    background: var(--black);
+    border: 4px solid var(--pink);
+    box-sizing: border-box;
+    cursor: pointer;
+  }
+
 
 
 </style>
@@ -49,16 +179,84 @@ main {
 
 <script client:load>
 
+var selectedMult = "0"
+var wageredChips = 5;
+var resultChips = "?"
+var pt5x = 7.5;
+var twox = 10;
+var threex = 15;
 
 
-async function chooseWager(choice) {
+
+function selectCard(cardNum){
+
+  const card15 = document.getElementById("card15")
+  const card2 = document.getElementById("card2")
+  const card3 = document.getElementById("card3")
+  card15.classList.remove("selected");
+  card2.classList.remove("selected");
+  card3.classList.remove("selected");
+
+  selectedMult = cardNum;
+
+  if (cardNum == '15') {
+    card15.classList.add("selected");
+  }
+  else if (cardNum == '2') {
+    card2.classList.add("selected");
+  }
+  else if (cardNum == '3') {
+    card3.classList.add("selected");
+  }
+
+  document.getElementById('confirm-button').classList.add("show");
+
+  updateCounts()
+}
+
+
+function updateCounts(){
+  console.log(wageredChips)
+  if (selectedMult == "15") {
+    resultChips = pt5x + (10 - wageredChips);
+  } else if (selectedMult == "2") {
+    resultChips = twox + (10 - wageredChips);
+  } else if (selectedMult == "3") {
+    resultChips = threex + (10 - wageredChips);
+  }
+  console.log("selected", selectedMult, resultChips, 10 - wageredChips);
+
+  const finalCount = document.getElementsByClassName('final-count');
+
+  for (var i = 0; i < finalCount.length; i++) {
+    finalCount[i].textContent = resultChips;
+  }
+
+  var loseCount = document.getElementsByClassName('lose-count');
+
+  for (var i = 0; i < loseCount.length; i++) {
+    loseCount[i].textContent = 10 - wageredChips;
+  }
+
+}
+
+function confirmWager(){
+  const mults = {
+    "15": "1.5x",
+    "2": "2x",
+    "3": "3x"
+  }
+  chooseWager(mults[selectedMult], wageredChips);
+}
+
+async function chooseWager(choice, amount) {
 
   const res = await fetch('/api/wager', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       wagerChoice: choice,
-      wagerAmount: 10,
+      wagerAmount: amount,
     }),
   });
 
@@ -70,6 +268,53 @@ async function chooseWager(choice) {
   if (data == "success") {
     window.location.href = '/spin/camera';
   }
+
+}
+
+
+
+var slider = document.getElementById("chips");
+
+var outputs = document.getElementsByClassName('wager-count');
+
+var output_pt5x = document.getElementsByClassName('wager-pt5x')
+
+var output_twox = document.getElementsByClassName('wager-twox')
+
+var output_threex = document.getElementsByClassName('wager-threex')
+
+for (var i = 0; i < outputs.length; i++) {
+  outputs[i].textContent = slider.value;
+}
+
+
+slider.oninput = function() {
+  pt5x = slider.value * 1.5;
+  twox = slider.value * 2;
+  threex = slider.value * 3;
+
+
+
+  for (var i = 0; i < outputs.length; i++) {
+    outputs[i].textContent = slider.value;
+
+  }
+
+  for (var i = 0; i < output_pt5x.length; i++) {
+    output_pt5x[i].textContent = pt5x;
+  }
+
+  for (var i = 0; i < output_twox.length; i++) {
+    output_twox[i].textContent = twox;
+  }
+
+  for (var i = 0; i < output_threex.length; i++) {
+    output_threex[i].textContent = threex;
+  }
+
+  wageredChips = Number(slider.value);
+
+  updateCounts()
 
 }
 

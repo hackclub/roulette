@@ -1,5 +1,5 @@
 ---
-import InsideLayout from '../../layouts/InsideLayout.astro';
+import Layout from '../../layouts/Layout.astro';
 
 import LinkButton from "../../components/LinkButton.astro";
 
@@ -24,62 +24,109 @@ var user = userData.fields;
 
 const { wheelOption } = Astro.params;
 
-const wheelOptions = choices[wheelOption]
+const wheelOptions = choices[wheelOption];
+
 // check the user spin number & whether it's already done...
 
 var totalCount;
+
 try {
-  totalCount = wheelOptions.length;
+  totalCount = Object.keys(wheelOptions).length;
 }
 catch {
   return redirectToLogin();
 }
 const limit = Math.ceil(0.33 * totalCount);
+
+
+
+
 ---
 
 
-<InsideLayout currentPage="spin">
 
-<main>
+<script define:vars={{wheelOptions, wheelOption}}>
 
 
-<p>you can disable at most { limit } options</p>
-<div class="checkboxes">
 
-{
-  wheelOptions.map( (option, index ) =>
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.hover-option').forEach(el => {
+    el.addEventListener('mouseenter', () => {
+      const option = el.dataset.option;
+      updateDetails(option);
+    });
+  });
 
-  <>
-  <input type="checkbox" id={option} name="wheelOptions" value={option} checked>
-  <label htmlFor={option}>{option}</label><br>
-  </>
+  document.querySelectorAll('.linkbutton').forEach(el => {
+    el.addEventListener('click', () => {
+      spin(wheelOption);
+    });
+  });
 
-  )
 
+});
+
+
+function updateDetails(value) {
+
+  /* const detailBox = document.getElementById('detail-box');
+  console.log(value);
+  var item = value; */
+
+  document.getElementById('detail-title').innerHTML = value;
+
+  document.getElementById('detail-description').innerHTML = wheelOptions[value].description;
+
+  const examples = Object.keys(wheelOptions[value].examples);
+
+  document.getElementById('detail-ex1').src = wheelOptions[value].examples[examples[0]];
+
+  document.getElementById('detail-ex2').src = wheelOptions[value].examples[examples[1]];
+  document.getElementById('detail-ex3').src = wheelOptions[value].examples[examples[2]];
+  document.getElementById('detail-ex4').src = wheelOptions[value].examples[examples[3]];
 }
 
-</div>
-
-<LinkButton onclick=`spin("${wheelOption}")`>spin!</LinkButton>
-
-</main>
-
-</InsideLayout>
-
-
-<style>
-main {
-  display: flex;
-  flex-flow: column;
-  justify-content: center;
-  height: 100%;
+function clearDetails(){
+  const title = document.getElementById('detail-title');
+  const desc = document.getElementById('detail-description');
+  if (title) title.textContent = '';
+  if (desc) desc.textContent = '';
+  for (let i = 1; i <= 4; i++) {
+    const img = document.getElementById(`detail-ex${i}`);
+    if (img) {
+      img.src = '';
+      img.style.display = 'none';
+    }
+  }
 }
 
+function showWinnerDetails(winningOption) {
+  const detailBox = document.getElementById('detail-box');
+  const detailTitle = document.getElementById('detail-title');
+  const detailDescription = document.getElementById('detail-description');
+  if (!detailBox || !detailTitle || !detailDescription) return;
 
-</style>
+  // Ensure visible
+  detailBox.style.display = 'block';
+  detailBox.style.visibility = 'visible';
 
+  // Populate content
+  detailTitle.innerHTML = `your camera option: ${winningOption}`;
+  detailDescription.innerHTML = wheelOptions[winningOption]?.description || '';
 
-<script client:load>
+  const examples = Object.keys(wheelOptions[winningOption]?.examples || {});
+  for (let i = 1; i <= 4; i++) {
+    const img = document.getElementById(`detail-ex${i}`);
+    if (!img) continue;
+    if (examples[i - 1]) {
+      img.src = wheelOptions[winningOption].examples[examples[i - 1]];
+      img.style.display = 'block';
+    } else {
+      img.src = '';
+      img.style.display = 'none';
+    }
+  }
+}
 
 
 
@@ -98,7 +145,12 @@ async function spin(wheelOption) {
   })
   .then(res => res.json())
   .then(data => {
-    console.log('Spin result:', data);
+    console.log('API response:', data);
+    console.log('Selected options:', selectedOptions);
+    console.log('Data includes check:', selectedOptions.includes(data));
+
+    // Always switch to wheel view and spin, regardless of the check
+    spinWheel(data);
 
   })
   .catch(err => {
@@ -107,8 +159,356 @@ async function spin(wheelOption) {
 }
 
 
-async function respin(){
+function spinWheel(spinResult){
+  const mainElement = document.getElementById('main');
+  mainElement.classList.add('spin');
+  clearDetails();
+
+  // Get the selected options (checked checkboxes)
+  const checkedBoxes = Array.from(document.querySelectorAll('input[name="wheelOptions"]:checked'));
+  const selectedOptions = checkedBoxes.map(box => box.value);
+
+  // Create and display the wheel with selected options
+  createWheel(selectedOptions, spinResult);
+
+  // Ensure the spin class stays permanently
+  console.log('Spin class added, main element classes:', mainElement.className);
+}
+
+function createWheel(selectedOptions, winningOption) {
+  const wheelContainer = document.getElementById('wheel-container');
+
+  // Clear any existing wheel but keep the arrow
+  const existingWheel = wheelContainer.querySelector('.roulette-wheel');
+  if (existingWheel) {
+    existingWheel.remove();
+  }
+
+  const count = selectedOptions.length;
+  const pos_deg = (360 / count) / 2;
+  const neg_deg = -(360 / count) / 2;
+  const skew_pos = 90 - (360 / count);
+  const skew_neg = -(90 - (360 / count));
+  const text_angle = -(-2.5 * (360 / count) + 216);
+
+  // Scale the wheel up from the original 250px to a larger diameter
+  const baseDiameter = 250;
+  const wheelDiameter = 360; // desired wheel size (px)
+  const scale = wheelDiameter / baseDiameter;
+
+  // Offset values for text positioning based on number of options
+  const offsets = {
+    2: { left: 10, bottom: 20 },
+    3: { left: 15, bottom: 20 },
+    4: { left: 20, bottom: 20 },
+    5: { left: 35, bottom: 20 },
+    6: { left: 55, bottom: 20 },
+    7: { left: 70, bottom: 5 },
+    8: { left: 100, bottom: -15 },
+    9: { left: 140, bottom: -40 },
+    10: { left: 220, bottom: -70 },
+    11: { left: 240, bottom: -70 },
+    12: { left: 260, bottom: -70 }
+  };
+
+  const offset = offsets[count] || { left: 20, bottom: 20 };
+  const scaledOffsetLeft = Math.round(offset.left * scale);
+  const scaledOffsetBottom = Math.round(offset.bottom * scale);
+
+  // Find the winning index for highlighting and calculate spin angle
+  const winningIndex = selectedOptions.indexOf(winningOption);
+  const segmentAngle = 360 / count;
+
+  // The wheel starts with an initial rotation of neg_deg
+  // Calculate where the center of the winning segment is relative to the initial position
+  const winningSegmentCenterAngle = (winningIndex * segmentAngle) + (segmentAngle / 2);
+
+  // Arrow is at 0 degrees (3 o'clock). We want the winning segment center to align there.
+  // Since the wheel starts rotated by neg_deg, and segments start from -90 degrees,
+  // we need to calculate the total rotation needed
+  const targetAngle = 90; // 90 degrees to get from top to right (arrow position)
+  const rotationToAlign = targetAngle - winningSegmentCenterAngle;
+
+  // Add multiple full rotations for dramatic effect
+  const fullSpins = 360 * 4;
+  const finalRotation = neg_deg + fullSpins + rotationToAlign + 120;
+
+  // Create the wheel structure
+  const wheel = document.createElement('ul');
+  wheel.className = 'roulette-wheel';
+
+  // Apply inline styles directly
+  wheel.style.cssText = `
+    transform: rotate(${neg_deg}deg);
+    min-height: ${wheelDiameter}px;
+    width: ${wheelDiameter}px;
+    border-radius: 50%;
+    padding: 0;
+    position: relative;
+    border: 4px solid #FF698A;
+    overflow: hidden;
+    background-color: #000000;
+    list-style: none;
+    margin: 0 auto;
+    transition: transform 3s cubic-bezier(0.25, 0.1, 0.25, 1);
+  `;
+
+  // Create wheel segments
+  selectedOptions.forEach((option, index) => {
+    const li = document.createElement('li');
+    const isWinning = index === winningIndex;
+
+         // Apply inline styles for each segment
+     // Segments start from the top (12 o'clock) and go clockwise
+     const segmentRotation = (index * segmentAngle) - 90; // -90 to start from top instead of right
+    li.style.cssText = `
+      padding: 0;
+      height: ${Math.round(200 * scale)}px;
+      width: ${Math.round(200 * scale)}px;
+      display: block;
+      position: absolute;
+      transform-origin: 0 ${Math.round(200 * scale)}px;
+      left: ${Math.round(125 * scale)}px;
+      top: ${Math.round(-75 * scale)}px;
+      border: 1px solid #FF698A;
+      transform: rotate(${segmentRotation}deg) skewY(${skew_neg}deg);
+      background-color: transparent;
+      transition: background-color 0.5s ease;
+    `;
+
+     // Add winning class for later highlighting
+     if (isWinning) {
+       li.classList.add('winning-segment');
+     }
+
+    const div = document.createElement('div');
+     div.style.cssText = `
+      margin: 0px;
+      transform: skewY(${skew_pos}deg) rotate(${skew_pos}deg);
+      transform-origin: ${Math.round(90 * scale)}px ${Math.round(52 * scale)}px;
+      display: flex;
+      text-align: left;
+      height: 90%;
+      border-radius: ${Math.round(250 * scale)}px;
+      margin-top: ${Math.round(25 * scale)}px;
+      font-weight: bold;
+      text-decoration: none;
+      color: #FF698A;
+      flex-flow: column;
+      justify-content: flex-end;
+    `;
+
+    const p = document.createElement('p');
+     p.style.cssText = `
+      transform: rotate(${text_angle}deg);
+      font-size: 0.5em;
+      margin-left: ${scaledOffsetLeft}px;
+      margin-bottom: ${scaledOffsetBottom}px;
+      white-space: nowrap;
+      margin-top: 0;
+      color: #FF698A;
+      font-weight: bold;
+      transition: color 0.5s ease;
+    `;
+    p.textContent = option;
+
+    div.appendChild(p);
+    li.appendChild(div);
+    wheel.appendChild(li);
+  });
+
+  wheelContainer.appendChild(wheel);
+
+  // Add console log to debug
+  console.log('Winning option:', winningOption);
+  console.log('Winning index:', winningIndex);
+  console.log('Segment angle:', segmentAngle);
+  console.log('Winning segment center angle:', winningSegmentCenterAngle);
+  console.log('Target angle:', targetAngle);
+  console.log('Rotation to align:', rotationToAlign);
+  console.log('Neg deg:', neg_deg);
+  console.log('Final rotation:', finalRotation);
+
+  // Trigger the spin animation after a short delay
+  setTimeout(() => {
+    const finalTransform = `rotate(${finalRotation}deg)`;
+    console.log('Final transform:', finalTransform);
+    wheel.style.transform = finalTransform;
+
+         // Highlight the winning segment after the spin completes
+      setTimeout(() => {
+        const winningSegment = wheel.querySelector('.winning-segment');
+        if (winningSegment) {
+          // Winner appearance: pink background, black text
+          winningSegment.style.backgroundColor = 'var(--pink)';
+          const winningText = winningSegment.querySelector('p');
+          const winningDiv = winningSegment.querySelector('div');
+          if (winningText) {
+            winningText.style.color = '#000000';
+          }
+          if (winningDiv) {
+            winningDiv.style.color = '#000000';
+          }
+        }
+
+       // Ensure the main element still has the spin class
+       const mainElement = document.getElementById('main');
+       if (!mainElement.classList.contains('spin')) {
+         console.log('Spin class was removed, adding it back');
+         mainElement.classList.add('spin');
+       }
+
+       // Show the details for the winning option
+       showWinnerDetails(winningOption);
+     }, 3000); // Wait for 3 seconds (duration of spin animation)
+  }, 100);
+}
+</script>
+
+
+<Layout>
+
+
+<main id="main">
+
+
+<div>
+<h1>wheel 1 of 3: {wheelOption}</h1>
+
+
+<div style="display: flex;">
+
+
+<div id="checkboxes" class="checkboxes" style="width: 50%;" client:load>
+
+<p>you can disable at most { limit } options</p>
+
+{
+   Object.entries(wheelOptions).map(([option, value]) =>
+   <>
+    <div class="hover-option" key={option}
+    data-option={option}
+
+    >
+    <input type="checkbox" id={option} name="wheelOptions" value={option} checked>
+    <label htmlFor={option}>{option}</label><br>
+
+    </div>
+
+  </>
+
+  )
 
 }
 
-</script>
+</div>
+
+<div id="wheel" class="wheel" style="width: 50%">
+  <div id="wheel-container">
+    <div id="wheel-arrow"></div>
+  </div>
+</div>
+
+<div id="detail-box" style="width: 50%; height: 500px;">
+  <p id="detail-title">hover on an option to see detailed explanation!</p>
+
+  <p id="detail-description"></p>
+  <div id="detail-images">
+    <img id="detail-ex1" class="detail-img" />
+    <img id="detail-ex2" class="detail-img" />
+    <img id="detail-ex3" class="detail-img" />
+    <img id="detail-ex4" class="detail-img" />
+  </div>
+</div>
+
+</div>
+<div style="display: flex; flex-flow: column; width: 80%; margin: 0 auto; text-align: center;">
+<LinkButton>spin!</LinkButton>
+</div>
+
+</div>
+</main>
+
+</Layout>
+
+
+<style>
+
+
+
+main {
+  display: flex;
+  flex-flow: column;
+  justify-content: center;
+  height: 100%;
+  padding: 30px;
+
+}
+
+#detail-box > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+#detail-box .detail-img {
+  height: 150px;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+  display: inline-block;
+  margin: 4px;
+}
+
+#wheel {
+display: none;
+}
+
+main.spin #wheel {
+display: block;
+}
+
+main.spin #checkboxes {
+  display: none;
+}
+
+
+main.spin #detail-box  div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+#detail-box {
+  padding: 20px;
+  border: 2px solid var(--pink);
+  border-radius: 10px;
+  background-color: rgba(0, 0, 0, 0.8);
+}
+
+#wheel-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  min-height: 300px;
+  position: relative;
+}
+
+#wheel-arrow {
+  position: absolute;
+  right: 10px; /* closer to the wheel */
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-right: 22px solid var(--pink); /* point left toward wheel */
+  border-top: 12px solid transparent;
+  border-bottom: 12px solid transparent;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+</style>

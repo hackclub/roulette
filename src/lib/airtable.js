@@ -115,6 +115,11 @@ export async function isSpunForCurrentWheelRound({ slackId, wheelOption }) {
 
 }
 
+export async function hasEnoughChips(slackId, wageredChips) {
+  const user = await getUserBySlackId(slackId);
+  return user.fields.chips >= wageredChips;
+}
+
 
 export async function userSpinWheel(slackId, selectedOptions, wheelOption) {
   const wheelOptionName = `spin${capitalise(wheelOption)}`

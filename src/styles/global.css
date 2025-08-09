@@ -30,6 +30,11 @@ img.avatar {
   border-radius: 0.2em;
 }
 
+
+h1 {
+  font-size: 3em;
+  margin: 8px 0;
+}
 p {
   margin: 8px 0;
 }

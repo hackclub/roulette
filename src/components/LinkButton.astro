@@ -1,11 +1,11 @@
 ---
 import InlineArrow from '../components/InlineArrow.astro';
 
-const { href = "#", newpage = false, arrow = false, onclick="" } = Astro.props;
+const { href = "#", newpage = false, arrow = false, backarrow=false, onclick="", class} = Astro.props;
 ---
 
-<a class="button" href={href} target={newpage ? "_blank" : "_self"} onclick={onclick}>
-  <slot />{arrow ? <InlineArrow /> : ""}</img>
+<a class="button linkbutton" href={href} target={newpage ? "_blank" : "_self"} onclick={onclick}>
+  {backarrow ? <InlineArrow reversed /> : ""}<slot />{arrow ? <InlineArrow /> : ""}</img>
 </a>
 
 <style>
