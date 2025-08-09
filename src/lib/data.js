@@ -74,51 +74,111 @@ export const choices = {
     "gameplay": {
         "puzzle": {
             "description": "solve problems using logic or pattern-recognition to progress.",
-            "examples": {}
+            "examples": {
+              "baba is you": "https://static1.polygonimages.com/wordpress/wp-content/uploads/chorus/uploads/chorus_asset/file/15957572/D1fY__nUYAAVQ_3.jpg",
+              "portal": "https://levelsandgear.files.wordpress.com/2010/05/portal4dimensionsno3.jpg",
+              "superliminal": "https://static.prod.thinkygames.com/uploads/screenshots/117ec8de-7592-466a-8c42-964ca7117cb2/0bc37cbf-f778-405d-aef4-83348b1b6b30-960x540.jpg",
+              "the witness": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTHokQViLhBsMaK5Xc_iXHThrvu9dYHPOSrBA&s"
+            }
         },
         "platformer": {
             "description": "navigate through platforms and obstacles to progress.",
-            "examples": {}
+            "examples": {
+              "celeste": "https://www.celestegame.com/images/screenshots/05.png",
+              "ori and the blind forest": "https://epiloguegaming.files.wordpress.com/2017/05/4nrqr7c.jpg?resize=2560%2C1440",
+              "super meat boy": "https://thegemsbok.com/wp-content/uploads/2022/06/Super-Meat-Boy-Forever-screenshot-with-Meat-Boy-in-Chipper-Grove-Light-World.png",
+              "super mario bros": "https://hips.hearstapps.com/digitalspyuk.cdnds.net/12/48/gaming-super-mario-bros-3.jpg"
+            }
         },
         "arcade": {
             "description": "typically in rounds or waves, use quick reflexes and hit high scores.",
-            "examples": {}
+            "examples": {
+              "pacman": "https://thereader.mitpress.mit.edu/wp-content/uploads/2020/11/pacman-lead-graphic.jpg",
+              "slither.io": "https://play-lh.googleusercontent.com/h2s7S6so1J7slT56mf56s_ckxDEkFYWT4A0mi6mfGFj_YNAfWids0hekOKAwHXAZ8g=w526-h296-rw",
+              "street fighter 6": "https://i0.wp.com/waytoomany.games/wp-content/uploads/2023/06/20230607123056_1.jpg?ssl=1",
+              "tetris 99": "https://assets.nintendo.com/image/upload/ar_16:9,b_auto:border,c_lpad/b_white/f_auto/q_auto/dpr_1.5/c_scale,w_500/ncom/software/switch/70010000018547/09a86db6b2399856413919ee25fdffaa4b094c21d142aa0489eb75e45c3d7e86"
+            }
         },
         "rhythm": {
             "description": "use rhythm or music-based inputs, such as being on beat or on tune.",
-            "examples": {}
+            "examples": {
+              "beat saber": "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/620980/ss_1881ae4f153faf0d1ccecca60fbdac5b43ad57eb.1920x1080.jpg?t=1749135147",
+              "taiko": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2288630/ss_239db8182d082194a71619da2edb622f89bd1794.1920x1080.jpg?t=1754517684",
+              "osu": "https://flathub.org/_next/image?url=https%3A%2F%2Fdl.flathub.org%2Fmedia%2Fsh%2Fppy%2Fosu%2F8fa4ebef7ac7c85c50f8813a66072ebd%2Fscreenshots%2Fimage-3_orig.webp&w=3840&q=75",
+              "melatonin": "https://i.ytimg.com/vi/Wmjks5xI-yg/maxresdefault.jpg"
+            }
         },
         "story-based": {
             "description": "rpg/visual novel/quest-centric games that emphasize the narrative or character development.",
-            "examples": {}
+            "examples": {
+              "night in the woods": "https://finji.co/assets/images/nitwscreenshot4.jpg",
+              "life is strange": "https://cdn.mos.cms.futurecdn.net/2e60b685560d01a1edad429351ad761e.png",
+              "butterfly soup": "https://img.itch.zone/aW1hZ2UvMTQzODk5LzgyNjc1MC5wbmc=/original/T0ZSUO.png",
+              "disco elysium": "https://i.pcmag.com/imagery/reviews/06KO3v73syjD6Vb9NAYFvJE-1..v1617757296.jpg"
+            }
         },
         "survival": {
             "description": "collect resources, explore, and stay alive!",
-            "examples": {}
+            "examples": {
+              "don't starve": "https://www.thespectrum.com/gcdn/-mm-/ef7d9320c68b1ee58113e3e2afb475ca85dd5bbe/c=5-0-2203-1242/local/-/media/2016/12/28/StGeorge/StGeorge/636185324085103973-Don-t-Starve--Shipwrecked-photo-1.png?width=1600&height=800&fit=crop&format=pjpg&auto=webp",
+              "subnautica": "https://i.guim.co.uk/img/media/c3fa594c48c79858c697868bc023ada2294d38fd/165_0_3600_2160/master/3600.jpg?width=1200&quality=85&auto=format&fit=max&s=fc4660d349b436f326041549b9c896fd",
+              "minecraft": "https://terracoders.com/sites/default/files/inline-images/MC.png",
+              "raft": "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/648800/ss_fddb32f91f59dc076b60eebf6d013fc9a636e0e1.1920x1080.jpg?t=1727184011"
+            }
         },
         "management": {
             "description": "manage your inventory, resources, people, or systems effectively.",
-            "examples": {}
+            "examples": {
+              "stardew valley": "https://storyblok.shockbyte.com/f/296405/1280x720/bf2492a65c/stardew-valley-server-hosting.webp/m/2560x0",
+              "spiritfarer": "https://clarafv.com/wp-content/uploads/2021/02/spiritfarer-screenshots-03.png",
+              "factorio": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSBLG04AQBH7xQjazxc1ur3n1BvoIfhuZR7rQ&s",
+              "mini motorways": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1127500/ss_9c2854c0af54f9512d5d480a2fdaa547f6ab876e.1920x1080.jpg?t=1667780984"
+            }
         },
         "combat": {
             "description": "fight and battle!",
-            "examples": {}
+            "examples": {
+              "dead cells": "https://play-lh.googleusercontent.com/mo0CZaV_aGflOPB8Tzo697l1WoZuoYUN9TiPMWq0zE29v_I99n1Qg185MfHrU-53nxAG=w526-h296-rw",
+              "hades": "https://assets1.ignimgs.com/2020/09/29/switch-hades-screenshot-3-1601347618169.jpg",
+              "hyper light drifter": "https://i.ytimg.com/vi/qqZZ52tGtdY/maxresdefault.jpg",
+              "katana zero": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/460950/ss_fce2aae6d24fbca70a8196e04f66c51d49a353b0.1920x1080.jpg?t=1719982207"
+            }
         },
         "stealth": {
             "description": "be sneaky and avoid detection.",
-            "examples": {}
+            "examples": {
+              "mark of the ninja": "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/214560/ss_e0e5bff3ff1aa40dd71296ca9becf8279910da2b.1920x1080.jpg?t=1668892924",
+              "invisible. inc": "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/243970/ss_33c9bdeb0dcbc64c6699e4375e591f7ab3c94ce3.1920x1080.jpg?t=1738778734",
+              "the marvellous miss take": "https://cdn.mos.cms.futurecdn.net/390e337fbf11aa174b46aada68212b65.png",
+              "heat signature": "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/268130/ss_e33b87b6ad40870378169086b28923ddae2e33ee.1920x1080.jpg?t=1727717430"
+            }
         },
         "exploration": {
             "description": "usually open-world, explore and discover new things!",
-            "examples": {}
+            "examples": {
+              "journey": "https://i.guim.co.uk/img/static/sys-images/Technology/Pix/pictures/2012/1/4/1325670126413/Journey-007.jpg?width=465&dpr=1&s=none&crop=none",
+              "outer wilds": "https://www.pluggedin.com/wp-content/uploads/2020/01/Outer_Wilds_Large-1024x587.jpg",
+              "eastshade": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS_t2hrxvJFNmxtF_8vYDEFMMl4zPFr4PUUFg&s",
+              "a short hike": "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/1055540/ss_f2123fea859e299736a3e99d130238c784d53e75.1920x1080.jpg?t=1734538147"
+            }
         },
         "deckbuilder": {
             "description": "build and customise a deck of cards — then use those cards to progress.",
-            "examples": {}
+            "examples": {
+              "balatro": "https://gaming-cdn.com/images/news/articles/10608/cover/1000x563/balatro-announces-a-big-update-for-this-year-cover67a6814d03867.jpg",
+              "slay the spire": "https://play-lh.googleusercontent.com/DNyJi9sVxrrpkYoFrZEq4yieQGG4RJJYQ_Mz_rmlv1gtAexMY60eUjLcalnvlrc3ng=w526-h296-rw",
+              "dicey dungeons": "https://static.prod.thinkygames.com/uploads/screenshots/110b81bc-d717-48d4-b160-7d1afd0a561a/3a7ee8b3-3b40-4044-ac7b-032c3f087643-960x540.jpg",
+              "inscryption": "https://images.kinguin.net/g/carousel-main-mobile/media/images/products/61707ea80bd63c0001627e52_bff41e398eef6cd534c5800ffd2b5430.jpg"
+            }
         },
         "clicker": {
             "description": "repeat actions (usually via clicking) to progress the game",
-            "examples": {}
+            "examples": {
+              "cookie clicker": "https://static.wikia.nocookie.net/cookieclicker/images/4/41/Bakery.png.png/revision/latest/scale-to-width-down/1919?cb=20241105192506",
+              "egg inc": "https://i.imgur.com/dlzBtAU.jpg",
+              "adventure capitalist": "https://eip.gg/wp-content/uploads/2020/01/adventure-capitalist-gameplay-screenshot-e1475648785365.jpg.webp",
+              "realm grinder": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/610080/ss_4cdba2a18f906ccb1746548d6378f682de6fc34a.1920x1080.jpg?t=1592248284"
+            }
         }
     },
     "setting": {
