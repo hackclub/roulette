@@ -20,7 +20,7 @@ body {
   font-style: normal;
 
   font-size: 1.5em;
-  overflow: hidden;
+  /* overflow: hidden; */
 }
 
 img.avatar {

@@ -120,6 +120,15 @@ export async function hasEnoughChips(slackId, wageredChips) {
   return user.fields.chips >= wageredChips;
 }
 
+export async function decrementUserChips(slackId, amount) {
+  const user = await getUserBySlackId(slackId);
+  if (!user) throw new Error('user not found');
+  const current = Number(user.fields.chips || 0);
+  const next = Math.max(0, current - Number(amount || 0));
+  await base('Users').update(user.id, { chips: next });
+  return next;
+}
+
 
 export async function userSpinWheel(slackId, selectedOptions, wheelOption) {
   const wheelOptionName = `spin${capitalise(wheelOption)}`

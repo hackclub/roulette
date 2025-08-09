@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { isWageredForCurrentRound, userWager, hasEnoughChips } from '../../lib/airtable.js';
+import { isWageredForCurrentRound, userWager, hasEnoughChips, decrementUserChips } from '../../lib/airtable.js';
 import { getCurrentRound } from '../../lib/data.js';
 import { getTokenFromCookies, verifyJwt } from '../../lib/auth.js';
 
@@ -34,12 +34,14 @@ export async function POST({ request }) {
   } else if (!hasEnough){
     return new Response('Not enough chips', { status: 401 });
   }else {
-    userWager({
+    await userWager({
       'slackId': payload.userId,
       'wagerChoice': wagerChoice,
       'wagerAmount': wagerAmount
 
     })
+    // Deduct chips immediately on wagering
+    await decrementUserChips(payload.userId, wagerAmount);
   }
 
   return new Response(JSON.stringify("success"), { status: 200 });

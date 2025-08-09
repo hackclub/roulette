@@ -5,7 +5,7 @@ import LinkButton from '../components/LinkButton.astro';
 
 import { requireUser, redirectToLogin } from '../lib/auth.js';
 import { getUserRound } from '../lib/airtable.js';
-import { getCurrentRound } from '../lib/data.js';
+import { getCurrentRound, choices } from '../lib/data.js';
 
 let userData;
 
@@ -30,7 +30,6 @@ const pickedSetting = fields.spinSetting || '—';
 const wagerChoice = fields.wagerChoice || '—';
 const wagerAmount = (fields.wagerAmount ?? '—');
 const numericWager = typeof wagerAmount === 'number' ? wagerAmount : 0;
-const remainingChips = (user.chips ?? 0) - numericWager;
 
 const hasCamera = pickedCamera !== '—';
 const hasGameplay = pickedGameplay !== '—';
@@ -41,6 +40,14 @@ const hasWager = wagerChoice !== '—';
 const multiplier = typeof wagerChoice === 'string' ? wagerChoice : String(wagerChoice || '—');
 const multiplierToHours = { '1.5x': '5h', '2x': '10h', '3x': '25h' };
 const hourTarget = multiplierToHours[multiplier] || '—';
+
+// Build result details for hover tooltip
+const camInfo = hasCamera ? choices.camera?.[pickedCamera] : null;
+const camExKeys = camInfo ? Object.keys(camInfo.examples) : [];
+const gameInfo = hasGameplay ? choices.gameplay?.[pickedGameplay] : null;
+const gameExKeys = gameInfo ? Object.keys(gameInfo.examples) : [];
+const setInfo = hasSetting ? choices.setting?.[pickedSetting] : null;
+const setExKeys = setInfo ? Object.keys(setInfo.examples) : [];
 
 let nextHref = '';
 let nextLabel = '';
@@ -63,14 +70,20 @@ if (!hasCamera && (wagerChoice !== '—')) {
 
 
 
-<main>
+<div class="mobile-cover">
+  <div class="mobile-cover__content">
+    <p>sorry, please view roulette on desktop! :(</p>
+  </div>
+</div>
+
+<main class="desktop-only">
   <section class="topbar">
     <div class="profile">
       <img class="avatar" src={user.avatar} alt="avatar" />
       <span class="username">{user.name}</span>
     </div>
     <div class="stats">
-      <span>chips: <strong>{remainingChips}</strong></span>
+      <span>chips: <strong>{user.chips}</strong></span>
       <span>round: <strong>{roundNumber}</strong></span>
     </div>
   </section>
@@ -78,9 +91,51 @@ if (!hasCamera && (wagerChoice !== '—')) {
   <section class="summary">
     <h2>your spins this round</h2>
     <div class="summary-row">
-      <div class="summary-card"><span class="label">camera</span><span class="value">{pickedCamera}</span></div>
-      <div class="summary-card"><span class="label">gameplay</span><span class="value">{pickedGameplay}</span></div>
-      <div class="summary-card"><span class="label">setting</span><span class="value">{pickedSetting}</span></div>
+        <div class="summary-card" {hasCamera ? { 'data-tooltip': camInfo.description } : {}}>
+          <span class="label">camera</span>
+          <span class="value">{pickedCamera}</span>
+          {hasCamera && (
+            <div class="tooltip">
+              <p class="tip-title">{pickedCamera}</p>
+              <p class="tip-desc">{camInfo.description}</p>
+              <div class="tip-images">
+                {camExKeys.slice(0,4).map((k) => (
+                  <img src={camInfo.examples[k]} alt={k} />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+        <div class="summary-card" {hasGameplay ? { 'data-tooltip': gameInfo.description } : {}}>
+          <span class="label">gameplay</span>
+          <span class="value">{pickedGameplay}</span>
+          {hasGameplay && (
+            <div class="tooltip">
+              <p class="tip-title">{pickedGameplay}</p>
+              <p class="tip-desc">{gameInfo.description}</p>
+              <div class="tip-images">
+                {gameExKeys.slice(0,4).map((k) => (
+                  <img src={gameInfo.examples[k]} alt={k} />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+        <div class="summary-card" {hasSetting ? { 'data-tooltip': setInfo.description } : {}}>
+          <span class="label">setting</span>
+          <span class="value">{pickedSetting}</span>
+          {hasSetting && (
+            <div class="tooltip">
+              <p class="tip-title">{pickedSetting}</p>
+              <p class="tip-desc">{setInfo.description}</p>
+              <div class="tip-images">
+                {setExKeys.slice(0,4).map((k) => (
+                  <img src={setInfo.examples[k]} alt={k} />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
     </div>
     <h2 style="margin-top:16px;">your wager</h2>
     <div class="summary-row">
@@ -106,6 +161,7 @@ if (!hasCamera && (wagerChoice !== '—')) {
   <p>drawing or making assets? take screenshots every hour or so and note down how long you spent. even better if you have eg. procreate project hour spent screenshots!</p>
 </details>
   </section>
+  <p>round 1 ends on friday, 15 august, 9am PST.</p>
 </main>
 
 </InsideLayout>
@@ -148,9 +204,50 @@ main {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  position: relative;
 }
 .summary-card .label { opacity: 0.85; }
 .summary-card .value { font-weight: 700; color: var(--pink); margin-left: 12px; }
+
+.summary-card .tooltip {
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 20;
+  background: rgba(0,0,0,0.9);
+  border: 2px solid var(--pink);
+  border-radius: 10px;
+  padding: 10px;
+  width: 420px;
+}
+.summary-card:hover .tooltip { display: block; }
+.tip-title { margin: 0 0 6px 0; font-weight: 700; color: var(--pink); }
+.tip-desc { margin: 0 0 8px 0; opacity: 0.9; }
+.tip-images { display: flex; gap: 6px; flex-wrap: wrap; }
+.tip-images img { height: 70px; width: auto; object-fit: cover; border-radius: 6px; border: 1px solid var(--pink); }
+
+/* Mobile cover overlay */
+.mobile-cover {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: var(--black);
+  color: var(--pink);
+  z-index: 9999;
+  align-items: center;
+  justify-content: center;
+}
+.mobile-cover__content { text-align: center; font-size: 1.2em; padding: 20px; }
+
+/* Responsive behavior: show cover on small screens, hide main */
+@media (max-width: 599px) {
+  .desktop-only { display: none !important; }
+  .mobile-cover { display: flex; }
+}
+@media (min-width: 600px) {
+  .mobile-cover { display: none; }
+}
 
 </style>
 
