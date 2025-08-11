@@ -1,0 +1,672 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import LinkButton from "../../components/LinkButton.astro";
+import InlineArrow from "../../components/InlineArrow.astro";
+import { requireUser, redirectToLogin } from '../../lib/auth.js';
+import { getCurrentRound } from '../../lib/data.js';
+import { getProjectsSinceRoundNum } from '../../lib/hackatime.js';
+
+let userData;
+let currentRound;
+let hackatimeProjects = [];
+
+export const prerender = false;
+
+try {
+  userData = await requireUser(Astro.request.headers);
+  currentRound = getCurrentRound();
+  
+  // Fetch hackatime projects server-side
+  try {
+    const slackId = userData.fields.slackId;
+    if (!slackId) {
+      console.error('No slackId found in user data:', userData);
+      hackatimeProjects = [];
+    } else {
+      hackatimeProjects = await getProjectsSinceRoundNum(slackId, currentRound);
+    }
+  } catch (error) {
+    console.error('Failed to fetch hackatime projects:', error);
+    hackatimeProjects = [];
+  }
+} catch {
+  return redirectToLogin();
+}
+---
+
+<Layout>
+  <main>
+    <a href="/spin"><InlineArrow reversed pink /> back to dashboard</a>
+
+    <div class="submission-container">
+      <h1>submit your round</h1>
+
+      <div class="form-section">
+        <label for="game-name">game name</label>
+        <input type="text" id="game-name" class="styled-input" placeholder="enter your game name...">
+      </div>
+
+      <div class="form-section">
+        <label for="game-description">game description</label>
+        <textarea id="game-description" class="styled-textarea" placeholder="describe what you built..."></textarea>
+      </div>
+
+      <div class="form-section">
+        <label for="game-screenshot">game screenshot</label>
+        <input type="file" id="game-screenshot" class="styled-file-input" accept=".png,.jpg,.jpeg">
+        <div id="screenshot-preview" class="screenshot-preview" style="display: none;">
+          <img id="preview-image" alt="Screenshot preview">
+          <button type="button" id="remove-screenshot" class="remove-btn">× remove</button>
+        </div>
+        <p class="help-text">only PNG and JPEG files are accepted</p>
+      </div>
+
+      <div class="form-section">
+        <label for="github-url">github url</label>
+        <input type="url" id="github-url" class="styled-input" placeholder="https://github.com/...">
+      </div>
+
+      <div class="form-section">
+        <label for="playable-url">playable url</label>
+        <input type="url" id="playable-url" class="styled-input" placeholder="https://...">
+      </div>
+
+      <div class="form-section">
+        <label for="hackatime-projects">select hackatime projects</label>
+        <div class="hackatime-container">
+          <input type="text" id="project-search" class="styled-input search-input" placeholder="search projects...">
+          <div class="projects-list">
+            {hackatimeProjects.length > 0 ? (
+              hackatimeProjects.map((project, index) => (
+                <div class="project-item">
+                  <input type="checkbox" id={`project-${index}`} name="hackatime-projects" value={project.name || project.id || `project-${index}`}>
+                  <label for={`project-${index}`}>{project.name || `Project ${index + 1}`} ({project.text})</label>
+                </div>
+              ))
+            ) : (
+              <p class="no-projects">No projects found for this round</p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <label for="additional-hours">additional hours</label>
+        <div class="additional-hours-container">
+          <div class="hours-input-row">
+            <input type="number" id="hours-number" class="styled-input hours-input" placeholder="0" min="0" step="0.5">
+            <span class="hours-label">hours</span>
+          </div>
+          <textarea id="hours-description" class="styled-textarea" placeholder="describe what you worked on..."></textarea>
+          <input type="file" id="hours-proofs" class="styled-file-input" multiple accept=".pdf,.png,.jpg,.jpeg">
+          <div id="proofs-preview" class="proofs-preview" style="display: none;">
+            <h4>uploaded files:</h4>
+            <div id="proofs-list" class="proofs-list"></div>
+          </div>
+          <p class="help-text">upload multiple proofs and journals (PDF/screenshots)</p>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="total-hours-container">
+          <h3>total hours</h3>
+          <div class="hours-breakdown">
+            <span class="total-amount">0h</span>
+            <span class="breakdown-details">(0 hackatime · 0 self-reported)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions" style="align-items: center;">
+        <span><a href="/spin" class="cancel-btn">cancel</a></span>
+        <LinkButton>submit round</LinkButton>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<script define:vars={{ hackatimeProjects }}>
+  document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('project-search');
+    const projectItems = document.querySelectorAll('.project-item');
+
+    searchInput.addEventListener('input', (e) => {
+      const searchTerm = e.target.value.toLowerCase().trim();
+      
+      projectItems.forEach(item => {
+        const label = item.querySelector('label');
+        const projectName = label.textContent.toLowerCase();
+        
+        if (projectName.includes(searchTerm)) {
+          item.style.display = 'flex';
+        } else {
+          item.style.display = 'none';
+        }
+      });
+    });
+
+    // Screenshot preview functionality
+    const screenshotInput = document.getElementById('game-screenshot');
+    const previewContainer = document.getElementById('screenshot-preview');
+    const previewImage = document.getElementById('preview-image');
+    const removeBtn = document.getElementById('remove-screenshot');
+
+    screenshotInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        // Validate file type
+        const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+        if (!validTypes.includes(file.type)) {
+          alert('Please select a PNG or JPEG file only.');
+          screenshotInput.value = '';
+          return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          previewImage.src = e.target.result;
+          previewContainer.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    removeBtn.addEventListener('click', () => {
+      screenshotInput.value = '';
+      previewContainer.style.display = 'none';
+      previewImage.src = '';
+    });
+
+    // Proofs multiple file handling
+    const proofsInput = document.getElementById('hours-proofs');
+    const proofsPreview = document.getElementById('proofs-preview');
+    const proofsList = document.getElementById('proofs-list');
+    let uploadedFiles = [];
+
+    proofsInput.addEventListener('change', (e) => {
+      const files = Array.from(e.target.files);
+      uploadedFiles = [...uploadedFiles, ...files];
+      updateProofsDisplay();
+    });
+
+    function updateProofsDisplay() {
+      if (uploadedFiles.length === 0) {
+        proofsPreview.style.display = 'none';
+        return;
+      }
+
+      proofsPreview.style.display = 'block';
+      proofsList.innerHTML = '';
+
+      uploadedFiles.forEach((file, index) => {
+        const fileItem = document.createElement('div');
+        fileItem.className = 'proof-file-item';
+        
+        const fileName = document.createElement('span');
+        fileName.className = 'file-name';
+        fileName.textContent = file.name;
+        
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'remove-proof-btn';
+        removeBtn.textContent = '×';
+        removeBtn.onclick = () => removeProofFile(index);
+        
+        fileItem.appendChild(fileName);
+        fileItem.appendChild(removeBtn);
+        proofsList.appendChild(fileItem);
+      });
+    }
+
+    function removeProofFile(index) {
+      uploadedFiles.splice(index, 1);
+      updateProofsDisplay();
+      
+      // Update the file input to reflect the removed files
+      const dt = new DataTransfer();
+      uploadedFiles.forEach(file => dt.items.add(file));
+      proofsInput.files = dt.files;
+    }
+
+    // Total hours calculation
+    const totalAmountSpan = document.querySelector('.total-amount');
+    const breakdownDetailsSpan = document.querySelector('.breakdown-details');
+    const hoursInput = document.getElementById('hours-number');
+
+    function updateTotalHours() {
+      let hackatimeTotalMinutes = 0;
+      let selfReportedTotalMinutes = 0;
+
+      // Calculate hackatime minutes from selected projects
+      const projectCheckboxes = document.querySelectorAll('input[name="hackatime-projects"]:checked');
+      projectCheckboxes.forEach(checkbox => {
+        const projectIndex = parseInt(checkbox.id.replace('project-', ''));
+        const project = hackatimeProjects[projectIndex];
+        if (project) {
+          const projectHours = parseFloat(project.hours) || 0;
+          const projectMinutes = parseFloat(project.minutes) || 0;
+          // Convert hours to minutes and add the minutes field
+          const totalProjectMinutes = Math.round(projectHours * 60) + projectMinutes;
+          hackatimeTotalMinutes += totalProjectMinutes;
+        }
+      });
+
+      // Get self-reported hours and convert to minutes
+      const selfReportedHours = parseFloat(hoursInput.value) || 0;
+      selfReportedTotalMinutes = Math.round(selfReportedHours * 60);
+
+      // Calculate total minutes
+      const totalMinutes = hackatimeTotalMinutes + selfReportedTotalMinutes;
+
+      // Convert back to hours and minutes for display
+      const totalHours = Math.floor(totalMinutes / 60);
+      const totalRemainingMinutes = totalMinutes % 60;
+
+      // Format display strings
+      const hackatimeHours = Math.floor(hackatimeTotalMinutes / 60);
+      const hackatimeMinutes = hackatimeTotalMinutes % 60;
+      const selfReportedHoursDisplay = Math.floor(selfReportedTotalMinutes / 60);
+      const selfReportedMinutes = selfReportedTotalMinutes % 60;
+
+      // Update total display
+      if (totalRemainingMinutes > 0) {
+        totalAmountSpan.textContent = `${totalHours}h ${totalRemainingMinutes}min`;
+      } else {
+        totalAmountSpan.textContent = `${totalHours}h`;
+      }
+
+      // Update breakdown display
+      let hackatimeDisplay = '';
+      if (hackatimeMinutes > 0) {
+        hackatimeDisplay = `${hackatimeHours}h ${hackatimeMinutes}min`;
+      } else {
+        hackatimeDisplay = `${hackatimeHours}h`;
+      }
+
+      let selfReportedDisplay = '';
+      if (selfReportedMinutes > 0) {
+        selfReportedDisplay = `${selfReportedHoursDisplay}h ${selfReportedMinutes}min`;
+      } else {
+        selfReportedDisplay = `${selfReportedHoursDisplay}h`;
+      }
+
+      breakdownDetailsSpan.textContent = `(${hackatimeDisplay} hackatime · ${selfReportedDisplay} self-reported)`;
+    }
+
+    // Add event listeners for real-time updates
+    function addProjectCheckboxListeners() {
+      const projectCheckboxes = document.querySelectorAll('input[name="hackatime-projects"]');
+      projectCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateTotalHours);
+      });
+    }
+
+    // Add listener to hours input
+    hoursInput.addEventListener('input', updateTotalHours);
+
+    // Add listeners to existing checkboxes and set up observer for dynamic content
+    addProjectCheckboxListeners();
+
+    // Set up mutation observer to handle dynamically added checkboxes
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'childList') {
+          addProjectCheckboxListeners();
+        }
+      });
+    });
+
+    const projectsList = document.querySelector('.projects-list');
+    if (projectsList) {
+      observer.observe(projectsList, { childList: true });
+    }
+
+    // Initial calculation
+    updateTotalHours();
+  });
+</script>
+
+<style>
+  main {
+    padding: 40px;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .submission-container {
+    margin-top: 40px;
+  }
+
+  h1 {
+    color: var(--pink);
+    margin-bottom: 32px;
+    text-align: center;
+  }
+
+  .form-section {
+    margin-bottom: 24px;
+  }
+
+  input, textarea {
+    box-sizing: border-box;
+  }
+
+  label {
+    display: block;
+    color: var(--pink);
+    font-weight: 600;
+    margin-bottom: 8px;
+    font-size: 1.1em;
+  }
+
+  .styled-dropdown,
+  .styled-input,
+  .styled-textarea {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid var(--pink);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.8);
+    color: var(--pink);
+    font-size: 0.85em;
+    transition: all 0.2s ease;
+  }
+
+  .styled-dropdown:focus,
+  .styled-input:focus,
+  .styled-textarea:focus {
+    outline: none;
+    border-color: #ff8aa3;
+    box-shadow: 0 0 0 3px rgba(255, 105, 138, 0.1);
+  }
+
+  .styled-dropdown option {
+    background: #000;
+    color: var(--pink);
+  }
+
+  .styled-textarea {
+    min-height: 120px;
+    resize: vertical;
+    font-family: inherit;
+  }
+
+  .styled-file-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px dashed var(--pink);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.4);
+    color: var(--pink);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .styled-file-input:hover {
+    border-color: #ff8aa3;
+    background: rgba(0, 0, 0, 0.6);
+  }
+
+  .help-text {
+    margin-top: 8px;
+    font-size: 0.9em;
+    opacity: 0.8;
+    color: var(--pink);
+  }
+
+  .form-actions {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    margin-top: 24px;
+  }
+
+  .cancel-btn {
+    background: transparent;
+    color: var(--pink);
+    border: 2px solid var(--pink);
+    padding: 8px 24px;
+    
+    border-radius: 16px;
+    font-size: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  .cancel-btn:hover {
+    background: var(--pink);
+    color: #000;
+    transform: translateY(-2px);
+  }
+
+  .cancel-btn:active {
+    transform: translateY(0);
+  }
+
+  /* Hackatime projects container */
+  .hackatime-container {
+    border: 2px solid var(--pink);
+    border-radius: 8px;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.4);
+  }
+
+  .search-input {
+    margin-bottom: 12px;
+  }
+
+  .projects-list {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid rgba(255, 105, 138, 0.3);
+    border-radius: 6px;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.6);
+  }
+
+  .project-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255, 105, 138, 0.1);
+  }
+
+  .project-item:last-child {
+    border-bottom: none;
+  }
+
+  .project-item input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+  }
+
+  .project-item label {
+    margin: 0;
+    font-size: 0.95em;
+    cursor: pointer;
+  }
+
+  /* Additional hours container */
+  .additional-hours-container {
+    border: 2px solid var(--pink);
+    border-radius: 8px;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.4);
+  }
+
+  .hours-input-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .hours-input {
+    width: 120px;
+    margin: 0;
+  }
+
+  .hours-label {
+    color: var(--pink);
+    font-weight: 600;
+  }
+
+  /* Scrollbar styling */
+  .projects-list::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .projects-list::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+  }
+
+  .projects-list::-webkit-scrollbar-thumb {
+    background: var(--pink);
+    border-radius: 4px;
+  }
+
+  .projects-list::-webkit-scrollbar-thumb:hover {
+    background: #ff8aa3;
+  }
+
+  .no-projects {
+    text-align: center;
+    color: var(--pink);
+    opacity: 0.7;
+    font-style: italic;
+    padding: 20px;
+  }
+
+  /* Screenshot preview */
+  .screenshot-preview {
+    margin-top: 12px;
+    border: 2px solid var(--pink);
+    border-radius: 8px;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.6);
+    text-align: center;
+  }
+
+  .screenshot-preview img {
+    max-width: 100%;
+    max-height: 300px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 105, 138, 0.3);
+    margin-bottom: 12px;
+  }
+
+  .remove-btn {
+    background: transparent;
+    color: var(--pink);
+    border: 1px solid var(--pink);
+    border-radius: 6px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s ease;
+  }
+
+  .remove-btn:hover {
+    background: var(--pink);
+    color: #000;
+  }
+
+  /* Proofs preview */
+  .proofs-preview {
+    margin-top: 12px;
+    border: 2px solid var(--pink);
+    border-radius: 8px;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.6);
+  }
+
+  .proofs-preview h4 {
+    margin: 0 0 12px 0;
+    color: var(--pink);
+    font-size: 1em;
+  }
+
+  .proofs-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .proof-file-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 105, 138, 0.3);
+    border-radius: 6px;
+  }
+
+  .file-name {
+    color: var(--pink);
+    font-size: 0.9em;
+    word-break: break-all;
+  }
+
+  .remove-proof-btn {
+    background: transparent;
+    color: var(--pink);
+    border: 1px solid var(--pink);
+    border-radius: 4px;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    margin-left: 12px;
+  }
+
+  .remove-proof-btn:hover {
+    background: var(--pink);
+    color: #000;
+  }
+
+  /* Total hours container */
+  .total-hours-container {
+    border: 2px solid var(--pink);
+    border-radius: 8px;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.6);
+    text-align: center;
+  }
+
+  .total-hours-container h3 {
+    margin: 0 0 16px 0;
+    color: var(--pink);
+    font-size: 1.2em;
+  }
+
+  .hours-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .total-amount {
+    font-size: 2em;
+    font-weight: bold;
+    color: var(--pink);
+  }
+
+  .breakdown-details {
+    font-size: 1em;
+    color: var(--pink);
+    opacity: 0.8;
+  }
+</style>

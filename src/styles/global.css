@@ -44,6 +44,10 @@ a {
   text-decoration-style: wavy;
 }
 
+input, textarea {
+  font-family: inherit;
+}
+
 a:hover {
   text-decoration-style: solid;
 }
