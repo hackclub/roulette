@@ -182,3 +182,27 @@ function choose(choices) {
   var index = Math.floor(Math.random() * choices.length);
   return choices[index];
 }
+
+export async function updateUserDetails(slackId, formData) {
+  const user = await getUserBySlackId(slackId);
+  if (!user) throw new Error('user not found');
+  
+  // Update user details in Airtable
+  await base('Users').update(user.id, {
+    firstname: formData.firstname,
+    lastname: formData.lastname,
+    doingwell: formData.doingwell,
+    improve: formData.improve,
+    hearabout: formData.hearabout,
+    addr1: formData.addr1,
+    addr2: formData.addr2,
+    city: formData.city,
+    state: formData.state,
+    country: formData.country,
+    zipcode: formData.zipcode,
+    githubusername: formData.githubusername,
+    birthday: formData.birthday
+  });
+  
+  return { success: true };
+}
