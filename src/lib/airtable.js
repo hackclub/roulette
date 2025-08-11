@@ -65,8 +65,6 @@ export async function isWageredForCurrentRound({ userId }) {
 // this assumes that it has already checked that the wager is not yet done for the current round
 export async function userWager({ slackId, wagerChoice, wagerAmount }) {
 
-  console.log("airtable wager log attempted")
-
   const currentRound = getCurrentRound();
 
   const user = await getUserBySlackId(slackId);
@@ -113,30 +111,21 @@ export async function resetRoundWithRespin(slackId) {
 
 
 export async function isSpunForCurrentWheelRound({ slackId, wheelOption }) {
-  console.log(slackId, wheelOption)
   const currentRound = getCurrentRound();
   const wheelOptionCaps = capitalise(wheelOption);
 
-
-
   const userRound = await getUserRound(slackId, currentRound);
-
 
   if (userRound) {
     var userRoundInfo = userRound.fields;
 
     if (userRoundInfo[`spin${wheelOptionCaps}`]) {
       return true
-
-    }
-    else {
+    } else {
       return false
     }
-    console.log(userRoundInfo);
-    console.log("CHECKINGCHECKING")
   }
   return true
-
 }
 
 export async function hasEnoughChips(slackId, wageredChips) {

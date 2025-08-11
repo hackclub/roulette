@@ -1,23 +1,21 @@
 import { requireUser } from '../../../lib/auth.js';
 import { updateUserDetails } from '../../../lib/airtable.js';
+import { getSecurityHeaders, sanitizeString } from '../../../lib/security.js';
 
 // Test GET endpoint to verify the route is working
 export async function GET() {
   return new Response(JSON.stringify({ message: 'API route is working' }), {
     status: 200,
-    headers: { 'Content-Type': 'application/json' }
+    headers: getSecurityHeaders()
   });
 }
 
 export async function POST({ request }) {
   try {
-    console.log('API called with request:', request);
-    console.log('Request headers:', request?.headers);
-    
     if (!request || !request.headers) {
       return new Response(JSON.stringify({ error: 'Invalid request object' }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' }
+        headers: getSecurityHeaders()
       });
     }
     
@@ -28,42 +26,49 @@ export async function POST({ request }) {
     if (!slackId) {
       return new Response(JSON.stringify({ error: 'Slack ID not found in user data' }), {
         status: 401,
-        headers: { 'Content-Type': 'application/json' }
+        headers: getSecurityHeaders()
       });
     }
 
     // Get form data from request body
     const formData = await request.json();
     
-    // Validate required fields
+    // Validate and sanitize required fields
     const requiredFields = [
       'firstname', 'lastname', 'birthday', 'githubusername', 
       'hearabout', 'doingwell', 'improve', 'addr1', 
       'city', 'state', 'country', 'zipcode'
     ];
     
+    const sanitizedData = {};
     for (const field of requiredFields) {
-      if (!formData[field] || formData[field].trim() === '') {
+      const value = formData[field];
+      if (!value || (typeof value === 'string' && value.trim() === '')) {
         return new Response(JSON.stringify({ error: `Missing required field: ${field}` }), {
           status: 400,
-          headers: { 'Content-Type': 'application/json' }
+          headers: getSecurityHeaders()
         });
       }
+      // Sanitize string inputs
+      sanitizedData[field] = sanitizeString(value, 200);
     }
 
+    // Handle optional fields
+    sanitizedData.addr2 = sanitizeString(formData.addr2 || '', 200);
+
     // Update user details in Airtable
-    await updateUserDetails(slackId, formData);
+    await updateUserDetails(slackId, sanitizedData);
     
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
-      headers: { 'Content-Type': 'application/json' }
+      headers: getSecurityHeaders()
     });
     
   } catch (error) {
     console.error('Error updating user details:', error);
     return new Response(JSON.stringify({ error: 'Failed to update details' }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: getSecurityHeaders()
     });
   }
 }

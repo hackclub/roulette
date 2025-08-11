@@ -1,29 +1,33 @@
 import { requireUser } from '../../lib/auth.js';
 import { submitProjectToAirtable } from '../../lib/airtable.js';
 import { getCurrentRound } from '../../lib/data.js';
+import { getSecurityHeaders, sanitizeString, isValidUrl, validateNumber, validateArray } from '../../lib/security.js';
 
 export async function POST({ request }) {
   try {
     // Authenticate user
     const userData = await requireUser(request.headers);
     if (!userData) {
-      return new Response('Unauthorized', { status: 401 });
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
+        status: 401,
+        headers: getSecurityHeaders()
+      });
     }
 
     // Parse form data
     const formData = await request.json();
     
-    // Extract fields
-    const gameName = formData.gameName;
-    const gameDescription = formData.gameDescription;
-    const githubUrl = formData.githubUrl;
-    const playableUrl = formData.playableUrl;
-    const screenshotUrl = formData.screenshotUrl;
-    const hackatimeProjects = formData.hackatimeProjects;
-    const additionalHours = parseFloat(formData.additionalHours) || 0;
-    const hoursDescription = formData.hoursDescription;
-    const totalHours = formData.totalHours;
-    const justificationLinks = formData.justificationLinks || [];
+    // Input validation and sanitization using security utilities
+    const gameName = sanitizeString(formData.gameName, 200);
+    const gameDescription = sanitizeString(formData.gameDescription, 2000);
+    const githubUrl = sanitizeString(formData.githubUrl, 500);
+    const playableUrl = sanitizeString(formData.playableUrl, 500);
+    const screenshotUrl = sanitizeString(formData.screenshotUrl, 500);
+    const hackatimeProjects = validateArray(formData.hackatimeProjects, 50);
+    const additionalHours = validateNumber(formData.additionalHours, 0, 1000);
+    const hoursDescription = sanitizeString(formData.hoursDescription, 1000);
+    const totalHours = sanitizeString(formData.totalHours, 100);
+    const justificationLinks = validateArray(formData.justificationLinks, 20).map(link => sanitizeString(link, 500));
     
     // Validate required fields
     const requiredFields = [
@@ -31,8 +35,23 @@ export async function POST({ request }) {
     ];
     
     for (const field of requiredFields) {
-      if (!formData[field] || (Array.isArray(formData[field]) && formData[field].length === 0)) {
-        return new Response(`Missing required field: ${field}`, { status: 400 });
+      const value = formData[field];
+      if (!value || (Array.isArray(value) && value.length === 0) || (typeof value === 'string' && value.trim() === '')) {
+        return new Response(JSON.stringify({ error: `Missing required field: ${field}` }), { 
+          status: 400,
+          headers: getSecurityHeaders()
+        });
+      }
+    }
+
+    // Validate URLs
+    const urlFields = { githubUrl, playableUrl };
+    for (const [fieldName, url] of Object.entries(urlFields)) {
+      if (url && !isValidUrl(url)) {
+        return new Response(JSON.stringify({ error: `Invalid ${fieldName}: must be a valid URL` }), { 
+          status: 400,
+          headers: getSecurityHeaders()
+        });
       }
     }
 
@@ -41,12 +60,26 @@ export async function POST({ request }) {
     const hasAdditionalHours = additionalHours > 0;
     
     if (!hasHackatimeProjects && !hasAdditionalHours) {
-      return new Response('You must have either hackatime projects OR additional hours to submit', { status: 400 });
+      return new Response(JSON.stringify({ error: 'You must have either hackatime projects OR additional hours to submit' }), { 
+        status: 400,
+        headers: getSecurityHeaders()
+      });
     }
 
     // Only require hours description if additional hours are entered
     if (hasAdditionalHours && (!hoursDescription || !hoursDescription.trim())) {
-      return new Response('Hours description is required when entering additional hours', { status: 400 });
+      return new Response(JSON.stringify({ error: 'Hours description is required when entering additional hours' }), { 
+        status: 400,
+        headers: getSecurityHeaders()
+      });
+    }
+
+    // Validate additional hours is reasonable
+    if (additionalHours > 1000) {
+      return new Response(JSON.stringify({ error: 'Additional hours cannot exceed 1000' }), { 
+        status: 400,
+        headers: getSecurityHeaders()
+      });
     }
 
     // Get user details from the authenticated user data
@@ -101,25 +134,16 @@ export async function POST({ request }) {
     // Submit to Airtable
     const result = await submitProjectToAirtable(projectData);
     
-    return new Response(JSON.stringify({ 
-      success: true, 
-      message: 'Project submitted successfully',
-      projectId: result.id 
-    }), {
+    return new Response(JSON.stringify({ success: true, result }), {
       status: 200,
-      headers: { 'Content-Type': 'application/json' }
+      headers: getSecurityHeaders()
     });
-
+    
   } catch (error) {
     console.error('Error submitting project:', error);
-    return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: error.message || 'Failed to submit project' 
-      }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      }
-    );
+    return new Response(JSON.stringify({ error: 'Failed to submit project' }), {
+      status: 500,
+      headers: getSecurityHeaders()
+    });
   }
 }

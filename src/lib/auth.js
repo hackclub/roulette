@@ -22,14 +22,27 @@ export function verifyJwt(token) {
 
 
 export async function requireUser(headers) {
-  const token = getTokenFromCookies(headers);
-  const decoded = verifyJwt(token);
-
-
-  const user = await getUserBySlackId(decoded.userId);
-
-  if (!user) throw new Error('user not found');
-  return user;
+  try {
+    const token = getTokenFromCookies(headers);
+    if (!token) {
+      throw new Error('No token provided');
+    }
+    
+    const decoded = verifyJwt(token);
+    if (!decoded || !decoded.userId) {
+      throw new Error('Invalid token payload');
+    }
+    
+    const user = await getUserBySlackId(decoded.userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+    
+    return user;
+  } catch (error) {
+    console.error('Authentication error:', error.message);
+    throw new Error('Authentication failed');
+  }
 }
 
 
