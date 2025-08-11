@@ -5,33 +5,65 @@ import InlineArrow from "../../components/InlineArrow.astro";
 import { requireUser, redirectToLogin } from '../../lib/auth.js';
 import { getCurrentRound } from '../../lib/data.js';
 import { getProjectsSinceRoundNum } from '../../lib/hackatime.js';
+import { getUserRound, getUserBySlackId } from '../../lib/airtable.js';
 
+export const prerender = false;
+
+// Get user data
 let userData;
 let currentRound;
 let hackatimeProjects = [];
-
-export const prerender = false;
+let wagerData = null;
 
 try {
   userData = await requireUser(Astro.request.headers);
   currentRound = getCurrentRound();
+  const slackId = userData.fields.slackId;
   
-  // Fetch hackatime projects server-side
+  // Fetch hackatime projects for this user
   try {
-    const slackId = userData.fields.slackId;
-    if (!slackId) {
-      console.error('No slackId found in user data:', userData);
-      hackatimeProjects = [];
-    } else {
+    if (slackId) {
       hackatimeProjects = await getProjectsSinceRoundNum(slackId, currentRound);
     }
   } catch (error) {
     console.error('Failed to fetch hackatime projects:', error);
-    hackatimeProjects = [];
   }
-} catch {
-  return redirectToLogin();
+
+  // Fetch wager data directly from Airtable instead of API call
+  try {
+    if (slackId) {
+      const userRound = await getUserRound(slackId, currentRound);
+      const user = await getUserBySlackId(slackId);
+      
+      if (userRound && user) {
+        wagerData = {
+          wagerChoice: userRound.fields.wagerChoice,
+          wagerAmount: userRound.fields.wagerAmount,
+          currentChips: user.fields.chips,
+          currentRespins: user.fields.respinTokens || 0,
+          targetHours: getTargetHours(userRound.fields.wagerChoice)
+        };
+      }
+    }
+  } catch (error) {
+    console.error('Failed to fetch wager data:', error);
+  }
+} catch (error) {
+  return Astro.redirect('/');
 }
+
+// Helper function to calculate target hours
+function getTargetHours(wagerChoice) {
+  const multiplierToHours = { '1.5x': 5, '2x': 10, '3x': 25 };
+  return multiplierToHours[wagerChoice] || 0;
+}
+
+// Extract wager information
+const wagerChoice = wagerData?.wagerChoice || '1.5x';
+const wagerAmount = wagerData?.wagerAmount || 0;
+const currentChips = wagerData?.currentChips || 0;
+const currentRespins = wagerData?.currentRespins || 0;
+const targetHours = wagerData?.targetHours || 0;
 ---
 
 <Layout>
@@ -41,86 +73,108 @@ try {
     <div class="submission-container">
       <h1>submit your round</h1>
 
-      <div class="form-section">
-        <label for="game-name">game name</label>
-        <input type="text" id="game-name" class="styled-input" placeholder="enter your game name...">
-      </div>
-
-      <div class="form-section">
-        <label for="game-description">game description</label>
-        <textarea id="game-description" class="styled-textarea" placeholder="describe what you built..."></textarea>
-      </div>
-
-      <div class="form-section">
-        <label for="game-screenshot">game screenshot</label>
-        <input type="file" id="game-screenshot" class="styled-file-input" accept=".png,.jpg,.jpeg">
-        <div id="screenshot-preview" class="screenshot-preview" style="display: none;">
-          <img id="preview-image" alt="Screenshot preview">
-          <button type="button" id="remove-screenshot" class="remove-btn">× remove</button>
+      <form id="submission-form">
+        <div class="form-section">
+          <label for="game-name">game name</label>
+          <input type="text" id="game-name" name="game-name" class="styled-input" placeholder="enter your game name..." required>
         </div>
-        <p class="help-text">only PNG and JPEG files are accepted</p>
-      </div>
 
-      <div class="form-section">
-        <label for="github-url">github url</label>
-        <input type="url" id="github-url" class="styled-input" placeholder="https://github.com/...">
-      </div>
+        <div class="form-section">
+          <label for="game-description">game description</label>
+          <textarea id="game-description" name="game-description" class="styled-textarea" placeholder="describe what you built..." required></textarea>
+        </div>
 
-      <div class="form-section">
-        <label for="playable-url">playable url</label>
-        <input type="url" id="playable-url" class="styled-input" placeholder="https://...">
-      </div>
+        <div class="form-section">
+          <label for="game-screenshot">game screenshot url</label>
+          <input type="url" id="game-screenshot" name="game-screenshot" class="styled-input" placeholder="https://github.com/.../screenshot.png">
+          <div id="screenshot-preview" class="screenshot-preview" style="display: none;">
+            <img id="preview-image" alt="Screenshot preview">
+            <button type="button" id="remove-screenshot" class="remove-btn">× remove</button>
+          </div>
+          <p class="help-text">put your screenshot in your github repo, then right click and copy image address to paste here</p>
+        </div>
 
-      <div class="form-section">
-        <label for="hackatime-projects">select hackatime projects</label>
-        <div class="hackatime-container">
-          <input type="text" id="project-search" class="styled-input search-input" placeholder="search projects...">
-          <div class="projects-list">
-            {hackatimeProjects.length > 0 ? (
-              hackatimeProjects.map((project, index) => (
-                <div class="project-item">
-                  <input type="checkbox" id={`project-${index}`} name="hackatime-projects" value={project.name || project.id || `project-${index}`}>
-                  <label for={`project-${index}`}>{project.name || `Project ${index + 1}`} ({project.text})</label>
+        <div class="form-section">
+          <label for="github-url">github url</label>
+          <input type="url" id="github-url" name="github-url" class="styled-input" placeholder="https://github.com/..." required>
+        </div>
+
+        <div class="form-section">
+          <label for="playable-url">playable url</label>
+          <input type="url" id="playable-url" name="playable-url" class="styled-input" placeholder="https://..." required>
+        </div>
+
+        <div class="form-section">
+          <label for="hackatime-projects">select hackatime projects</label>
+          <div class="hackatime-container">
+            <input type="text" id="project-search" class="styled-input search-input" placeholder="search projects...">
+            <div class="projects-list">
+              {hackatimeProjects.length > 0 ? (
+                hackatimeProjects.map((project, index) => (
+                  <div class="project-item">
+                    <input type="checkbox" id={`project-${index}`} name="hackatime-projects" value={project.name || project.id || `project-${index}`}>
+                    <label for={`project-${index}`}>{project.name || `Project ${index + 1}`} ({project.text})</label>
+                  </div>
+                ))
+              ) : (
+                <p class="no-projects">No projects found for this round</p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <label for="additional-hours">additional hours</label>
+          <div class="additional-hours-container">
+            <div class="hours-input-row">
+              <input type="number" id="hours-number" name="hours-number" class="styled-input hours-input" placeholder="0" min="0" step="0.5">
+              <span class="hours-label">hours</span>
+            </div>
+            <textarea id="hours-description" name="hours-description" class="styled-textarea" placeholder="describe what you worked on..."></textarea>
+            
+            <div class="justification-links">
+              <label for="justification-links">justification links (github repo links to proofs, journals, etc.)</label>
+              <div id="justification-links-container">
+                <div class="link-input-row">
+                  <input type="url" class="styled-input justification-link" placeholder="https://github.com/.../proof1.pdf">
+                  <button type="button" class="remove-link-btn">×</button>
                 </div>
-              ))
-            ) : (
-              <p class="no-projects">No projects found for this round</p>
-            )}
+              </div>
+              <button type="button" id="add-justification-link" class="add-link-btn">+ add another link</button>
+              <p class="help-text">put your proof files (PDFs, screenshots, etc.) in your github repo and paste the direct links here</p>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="form-section">
-        <label for="additional-hours">additional hours</label>
-        <div class="additional-hours-container">
-          <div class="hours-input-row">
-            <input type="number" id="hours-number" class="styled-input hours-input" placeholder="0" min="0" step="0.5">
-            <span class="hours-label">hours</span>
-          </div>
-          <textarea id="hours-description" class="styled-textarea" placeholder="describe what you worked on..."></textarea>
-          <input type="file" id="hours-proofs" class="styled-file-input" multiple accept=".pdf,.png,.jpg,.jpeg">
-          <div id="proofs-preview" class="proofs-preview" style="display: none;">
-            <h4>uploaded files:</h4>
-            <div id="proofs-list" class="proofs-list"></div>
-          </div>
-          <p class="help-text">upload multiple proofs and journals (PDF/screenshots)</p>
-        </div>
-      </div>
-
-      <div class="form-section">
-        <div class="total-hours-container">
-          <h3>total hours</h3>
-          <div class="hours-breakdown">
-            <span class="total-amount">0h</span>
-            <span class="breakdown-details">(0 hackatime · 0 self-reported)</span>
+        <div class="form-section">
+          <div class="combined-summary">
+            <h3>total hours & rewards</h3>
+            <div class="summary-content">
+              <div class="hours-section">
+                <div><span class="total-amount">0h</span> / <span class="target-display">{targetHours > 0 ? `${targetHours}h` : '—'}</span> target</div>
+                <div class="breakdown-details">(0 hackatime · 0 self-reported)</div>
+              </div>
+              
+              <div class="expected-rewards">
+                <p>once you submit, you will get:</p>
+                <div class="rewards-breakdown">
+                  <span class="chips-reward" data-wager-choice={wagerChoice} data-wager-amount={wagerAmount} data-current-chips={currentChips}>
+                    <span class="chips-text">calculating...</span> (<span id="chips-total">{currentChips}</span> total)
+                  </span> 
+                  <span class="respin-reward" data-current-respins={currentRespins}>
+                    <span class="respin-text">+ 0 respin tokens</span> (<span id="respin-total">{currentRespins}</span> total)
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="form-actions" style="align-items: center;">
-        <span><a href="/spin" class="cancel-btn">cancel</a></span>
-        <LinkButton>submit round</LinkButton>
-      </div>
+        <div class="form-actions" style="align-items: center;">
+          <span><a href="/spin" class="cancel-btn">cancel</a></span>
+          <button type="submit" id="submit-btn" class="button linkbutton">submit round</button>
+        </div>
+      </form>
     </div>
   </main>
 </Layout>
@@ -151,25 +205,24 @@ try {
     const previewImage = document.getElementById('preview-image');
     const removeBtn = document.getElementById('remove-screenshot');
 
-    screenshotInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        // Validate file type
-        const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
-        if (!validTypes.includes(file.type)) {
-          alert('Please select a PNG or JPEG file only.');
-          screenshotInput.value = '';
-          return;
-        }
-        
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          previewImage.src = e.target.result;
-          previewContainer.style.display = 'block';
-        };
-        reader.readAsDataURL(file);
+    screenshotInput.addEventListener('input', (e) => {
+      const url = e.target.value.trim();
+      if (url && isValidImageUrl(url)) {
+        previewImage.src = url;
+        previewContainer.style.display = 'block';
+      } else {
+        previewContainer.style.display = 'none';
       }
     });
+
+    function isValidImageUrl(url) {
+      try {
+        const urlObj = new URL(url);
+        return urlObj.protocol === 'https:' && /\.(png|jpg|jpeg|gif|webp)$/i.test(urlObj.pathname);
+      } catch {
+        return false;
+      }
+    }
 
     removeBtn.addEventListener('click', () => {
       screenshotInput.value = '';
@@ -177,56 +230,35 @@ try {
       previewImage.src = '';
     });
 
-    // Proofs multiple file handling
-    const proofsInput = document.getElementById('hours-proofs');
-    const proofsPreview = document.getElementById('proofs-preview');
-    const proofsList = document.getElementById('proofs-list');
-    let uploadedFiles = [];
+    // Justification links handling
+    const addLinkBtn = document.getElementById('add-justification-link');
+    const linksContainer = document.getElementById('justification-links-container');
 
-    proofsInput.addEventListener('change', (e) => {
-      const files = Array.from(e.target.files);
-      uploadedFiles = [...uploadedFiles, ...files];
-      updateProofsDisplay();
+    addLinkBtn.addEventListener('click', () => {
+      const linkRow = document.createElement('div');
+      linkRow.className = 'link-input-row';
+      linkRow.innerHTML = `
+        <input type="url" class="styled-input justification-link" placeholder="https://github.com/.../proof.pdf">
+        <button type="button" class="remove-link-btn">×</button>
+      `;
+      
+      // Add remove functionality to new row
+      const removeBtn = linkRow.querySelector('.remove-link-btn');
+      removeBtn.addEventListener('click', () => {
+        linkRow.remove();
+      });
+      
+      linksContainer.appendChild(linkRow);
     });
 
-    function updateProofsDisplay() {
-      if (uploadedFiles.length === 0) {
-        proofsPreview.style.display = 'none';
-        return;
+    // Add remove functionality to initial row
+    const initialRemoveBtn = linksContainer.querySelector('.remove-link-btn');
+    initialRemoveBtn.addEventListener('click', () => {
+      const linkRow = initialRemoveBtn.closest('.link-input-row');
+      if (linksContainer.children.length > 1) {
+        linkRow.remove();
       }
-
-      proofsPreview.style.display = 'block';
-      proofsList.innerHTML = '';
-
-      uploadedFiles.forEach((file, index) => {
-        const fileItem = document.createElement('div');
-        fileItem.className = 'proof-file-item';
-        
-        const fileName = document.createElement('span');
-        fileName.className = 'file-name';
-        fileName.textContent = file.name;
-        
-        const removeBtn = document.createElement('button');
-        removeBtn.type = 'button';
-        removeBtn.className = 'remove-proof-btn';
-        removeBtn.textContent = '×';
-        removeBtn.onclick = () => removeProofFile(index);
-        
-        fileItem.appendChild(fileName);
-        fileItem.appendChild(removeBtn);
-        proofsList.appendChild(fileItem);
-      });
-    }
-
-    function removeProofFile(index) {
-      uploadedFiles.splice(index, 1);
-      updateProofsDisplay();
-      
-      // Update the file input to reflect the removed files
-      const dt = new DataTransfer();
-      uploadedFiles.forEach(file => dt.items.add(file));
-      proofsInput.files = dt.files;
-    }
+    });
 
     // Total hours calculation
     const totalAmountSpan = document.querySelector('.total-amount');
@@ -291,18 +323,182 @@ try {
       }
 
       breakdownDetailsSpan.textContent = `(${hackatimeDisplay} hackatime · ${selfReportedDisplay} self-reported)`;
+
+      // Update submission summary when hours change
+      updateSubmissionSummary();
+    }
+
+    // Update submission summary with wager and reward information
+    function updateSubmissionSummary() {
+      console.log('Updating submission summary...'); // Debug log
+      
+      // Debug: Inspect the actual rendered HTML
+      console.log('=== DOM INSPECTION ===');
+      const rewardsBreakdown = document.querySelector('.rewards-breakdown');
+      if (rewardsBreakdown) {
+        console.log('Rewards breakdown HTML:', rewardsBreakdown.innerHTML);
+        console.log('Rewards breakdown outerHTML:', rewardsBreakdown.outerHTML);
+      } else {
+        console.log('Rewards breakdown container not found!');
+      }
+      
+      // Get wager data from server-side (stored in data attributes)
+      const chipsReward = document.querySelector('.chips-reward');
+      const respinReward = document.querySelector('.respin-reward');
+      const chipsTotalSpan = document.getElementById('chips-total');
+      const respinTotalSpan = document.getElementById('respin-total');
+      
+      console.log('Elements found:', {
+        chipsReward: chipsReward ? 'FOUND' : 'MISSING',
+        respinReward: respinReward ? 'FOUND' : 'MISSING',
+        chipsTotalSpan: chipsTotalSpan ? 'FOUND' : 'MISSING',
+        respinTotalSpan: respinTotalSpan ? 'FOUND' : 'MISSING'
+      });
+      
+      console.log('DOM structure:', {
+        'chips-reward elements': document.querySelectorAll('.chips-reward').length,
+        'respin-reward elements': document.querySelectorAll('.respin-reward').length,
+        'chips-total elements': document.querySelectorAll('#chips-total').length,
+        'respin-total elements': document.querySelectorAll('#respin-total').length
+      });
+      
+      // Debug: Log the actual elements to see what we're getting
+      console.log('Raw elements:', {
+        chipsReward: chipsReward,
+        respinReward: respinReward,
+        chipsTotalSpan: chipsTotalSpan,
+        respinTotalSpan: respinTotalSpan
+      });
+      
+      // Debug: Check if elements exist by class name
+      console.log('All elements with class chips-reward:', document.querySelectorAll('.chips-reward'));
+      console.log('All elements with class respin-reward:', document.querySelectorAll('.respin-reward'));
+      
+      // Debug: Show the data attributes values
+      if (chipsReward) {
+        console.log('Chips reward data attributes:', {
+          wagerChoice: chipsReward.dataset.wagerChoice,
+          wagerAmount: chipsReward.dataset.wagerAmount,
+          currentChips: chipsReward.dataset.currentChips
+        });
+      }
+      
+      if (respinReward) {
+        console.log('Respin reward data attributes:', {
+          currentRespins: respinReward.dataset.currentRespins
+        });
+      }
+      
+      if (chipsReward && respinReward && chipsTotalSpan && respinTotalSpan) {
+        // Extract wager data from data attributes
+        const wagerChoice = chipsReward.dataset.wagerChoice || '1.5x';
+        const wagerAmount = parseInt(chipsReward.dataset.wagerAmount) || 0;
+        const currentChips = parseInt(chipsReward.dataset.currentChips) || 0;
+        const currentRespins = parseInt(respinReward.dataset.currentRespins) || 0;
+        
+        console.log('Wager data extracted:', { wagerChoice, wagerAmount, currentChips, currentRespins });
+        
+        // Get current total hours and target hours
+        const currentHoursText = document.querySelector('.total-amount').textContent;
+        const currentHours = parseFloat(currentHoursText.replace('h', '').replace('min', '')) || 0;
+        const targetHours = parseFloat(document.querySelector('.target-display').textContent.replace('h', '')) || 0;
+        const hoursAboveTarget = Math.max(0, currentHours - targetHours);
+        const expectedRespins = Math.floor(hoursAboveTarget / 3);
+        
+        console.log('Hours calculation:', { currentHours, targetHours, hoursAboveTarget, expectedRespins }); // Debug log
+        
+        // Only show expected chips if hours meet or exceed target
+        if (currentHours >= targetHours) {
+          // Calculate expected chips (wager amount × multiplier)
+          const multiplierValues = { '1.5x': 1.5, '2x': 2, '3x': 3 };
+          const multiplier = multiplierValues[wagerChoice] || 1.5;
+          const expectedChips = Math.round(wagerAmount * multiplier);
+          
+          console.log('Chips calculation (hours >= target):', {
+            wagerAmount,
+            wagerChoice,
+            multiplier,
+            expectedChips,
+            currentChips,
+            totalChips: currentChips + expectedChips
+          });
+          
+          // Update the chips-text span instead of the entire chipsReward
+          const chipsText = chipsReward.querySelector('.chips-text');
+          if (chipsText) {
+            chipsText.textContent = `${expectedChips} chips`;
+          }
+          chipsTotalSpan.textContent = currentChips + expectedChips;
+        } else {
+          // Show that hours are insufficient
+          const hoursNeeded = targetHours - currentHours;
+          // Update the chips-text span instead of the entire chipsReward
+          const chipsText = chipsReward.querySelector('.chips-text');
+          if (chipsText) {
+            if (targetHours > 0) {
+              chipsText.textContent = `need ${hoursNeeded}h more to earn chips`;
+            } else {
+              // If no target hours set, show default chips calculation
+              const multiplierValues = { '1.5x': 1.5, '2x': 2, '3x': 3 };
+              const multiplier = multiplierValues[wagerChoice] || 1.5;
+              const expectedChips = Math.round(wagerAmount * multiplier);
+              
+              console.log('Chips calculation (no target hours):', {
+                wagerAmount,
+                wagerChoice,
+                multiplier,
+                expectedChips,
+                currentChips,
+                totalChips: currentChips + expectedChips
+              });
+              
+              chipsText.textContent = `${expectedChips} chips`;
+            }
+          }
+          chipsTotalSpan.textContent = currentChips;
+        }
+        
+        // Update respin tokens
+        const respinText = respinReward.querySelector('.respin-text');
+        if (respinText) {
+          respinText.textContent = `+ ${expectedRespins} respin tokens`;
+        }
+        respinTotalSpan.textContent = currentRespins + expectedRespins;
+        
+        console.log('Updated display elements'); // Debug log
+      } else {
+        console.log('Some elements not found, cannot update display'); // Debug log
+        console.log('Missing elements:', {
+          chipsReward: !chipsReward,
+          respinReward: !respinReward,
+          chipsTotalSpan: !chipsTotalSpan,
+          respinTotalSpan: !respinTotalSpan
+        });
+      }
     }
 
     // Add event listeners for real-time updates
     function addProjectCheckboxListeners() {
       const projectCheckboxes = document.querySelectorAll('input[name="hackatime-projects"]');
       projectCheckboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', updateTotalHours);
+        checkbox.addEventListener('change', () => {
+          updateTotalHours();
+          // Only update summary if elements exist
+          if (document.getElementById('chips-total')) {
+            updateSubmissionSummary();
+          }
+        });
       });
     }
 
     // Add listener to hours input
-    hoursInput.addEventListener('input', updateTotalHours);
+    hoursInput.addEventListener('input', () => {
+      updateTotalHours();
+      // Only update summary if elements exist
+      if (document.getElementById('chips-total')) {
+        updateSubmissionSummary();
+      }
+    });
 
     // Add listeners to existing checkboxes and set up observer for dynamic content
     addProjectCheckboxListeners();
@@ -312,6 +508,10 @@ try {
       mutations.forEach((mutation) => {
         if (mutation.type === 'childList') {
           addProjectCheckboxListeners();
+          // Only update summary if elements exist
+          if (document.getElementById('chips-total')) {
+            updateSubmissionSummary();
+          }
         }
       });
     });
@@ -323,6 +523,112 @@ try {
 
     // Initial calculation
     updateTotalHours();
+
+    // Update submission summary immediately and also with delay as backup
+    updateSubmissionSummary();
+    setTimeout(() => {
+      updateSubmissionSummary();
+    }, 100);
+
+    // Form submission handling
+    const form = document.getElementById('submission-form');
+    const submitBtn = document.getElementById('submit-btn');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      // Validate required fields
+      const requiredFields = [
+        'game-name', 'game-description', 'github-url', 'playable-url'
+      ];
+
+      let isValid = true;
+      const missingFields = [];
+
+      requiredFields.forEach(fieldName => {
+        const field = document.querySelector(`[name="${fieldName}"]`);
+        if (!field.value.trim()) {
+          isValid = false;
+          missingFields.push(fieldName.replace('-', ' '));
+        }
+      });
+
+      // Check if user has either hackatime projects OR additional hours
+      const selectedProjects = document.querySelectorAll('input[name="hackatime-projects"]:checked');
+      const additionalHours = parseFloat(document.getElementById('hours-number').value) || 0;
+      
+      const hasHackatimeProjects = selectedProjects.length > 0;
+      const hasAdditionalHours = additionalHours > 0;
+      
+      if (!hasHackatimeProjects && !hasAdditionalHours) {
+        isValid = false;
+        missingFields.push('either hackatime projects or additional hours');
+      }
+
+      // Only require hours description if additional hours are entered
+      if (hasAdditionalHours) {
+        const hoursDescription = document.getElementById('hours-description').value.trim();
+        if (!hoursDescription) {
+          isValid = false;
+          missingFields.push('hours description');
+        }
+      }
+
+      if (!isValid) {
+        alert(`Please fill in all required fields: ${missingFields.join(', ')}`);
+        return;
+      }
+
+      // Collect form data
+      const formData = {
+        gameName: document.getElementById('game-name').value.trim(),
+        gameDescription: document.getElementById('game-description').value.trim(),
+        githubUrl: document.getElementById('github-url').value.trim(),
+        playableUrl: document.getElementById('playable-url').value.trim(),
+        hoursDescription: document.getElementById('hours-description').value.trim(),
+        totalHours: document.querySelector('.total-amount').textContent,
+        hackatimeProjects: Array.from(selectedProjects).map(project => project.value),
+        additionalHours: additionalHours,
+        screenshotUrl: document.getElementById('game-screenshot').value.trim() || '',
+        justificationLinks: Array.from(document.querySelectorAll('.justification-link'))
+          .map(input => input.value.trim())
+          .filter(link => link.length > 0)
+      };
+
+      // Disable submit button and show loading state
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'submitting...';
+
+      try {
+        const response = await fetch('/api/submit-project', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify(formData)
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || `Failed to submit: ${response.status}`);
+        }
+
+        const result = await response.json();
+        
+        // Success - show confirmation and redirect
+        alert('Project submitted successfully!');
+        window.location.href = '/spin';
+        
+      } catch (error) {
+        console.error('Error submitting project:', error);
+        alert(`Failed to submit project: ${error.message}`);
+        
+        // Re-enable submit button
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'submit round';
+      }
+    });
   });
 </script>
 
@@ -421,6 +727,51 @@ try {
     margin-top: 24px;
   }
 
+  .form-actions button[type="submit"] {
+    margin: 32px 0;
+    box-sizing: border-box;
+    position: relative;
+    background-color: var(--pink);
+    color: var(--black);
+    text-decoration: none;
+    border: none;
+    border-radius: 16px;
+    padding: 8px 24px;
+    font-size: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.05s ease-in-out;
+    box-shadow:
+      6px 4px 0 0px var(--black),
+      8px 2px 0 0px var(--pink),
+      8px 6px 0 0px var(--pink),
+      6px 6px 0 0px var(--pink);
+    left: 0px;
+    top: 0px;
+  }
+
+  .form-actions button[type="submit"]:hover {
+    box-shadow: none;
+    left: 8px;
+    top: 6px;
+  }
+
+  .form-actions button[type="submit"]:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  .form-actions button[type="submit"]:disabled:hover {
+    box-shadow:
+      6px 4px 0 0px var(--black),
+      8px 2px 0 0px var(--pink),
+      8px 6px 0 0px var(--pink),
+      6px 6px 0 0px var(--pink);
+    left: 0px;
+    top: 0px;
+  }
+
   .cancel-btn {
     background: transparent;
     color: var(--pink);
@@ -515,6 +866,70 @@ try {
     font-weight: 600;
   }
 
+  /* Justification links */
+  .justification-links {
+    margin-top: 16px;
+  }
+
+  .justification-links label {
+    display: block;
+    color: var(--pink);
+    font-weight: 600;
+    margin-bottom: 8px;
+    font-size: 1em;
+  }
+
+  .link-input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .justification-link {
+    flex: 1;
+    margin: 0;
+  }
+
+  .remove-link-btn {
+    background: transparent;
+    color: var(--pink);
+    border: 1px solid var(--pink);
+    border-radius: 4px;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+  }
+
+  .remove-link-btn:hover {
+    background: var(--pink);
+    color: #000;
+  }
+
+  .add-link-btn {
+    background: transparent;
+    color: var(--pink);
+    border: 1px solid var(--pink);
+    border-radius: 6px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    margin-top: 8px;
+  }
+
+  .add-link-btn:hover {
+    background: var(--pink);
+    color: #000;
+  }
+
   /* Scrollbar styling */
   .projects-list::-webkit-scrollbar {
     width: 8px;
@@ -576,97 +991,85 @@ try {
     color: #000;
   }
 
-  /* Proofs preview */
-  .proofs-preview {
-    margin-top: 12px;
-    border: 2px solid var(--pink);
-    border-radius: 8px;
-    padding: 16px;
-    background: rgba(0, 0, 0, 0.6);
-  }
-
-  .proofs-preview h4 {
-    margin: 0 0 12px 0;
-    color: var(--pink);
-    font-size: 1em;
-  }
-
-  .proofs-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .proof-file-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 12px;
-    background: rgba(0, 0, 0, 0.4);
-    border: 1px solid rgba(255, 105, 138, 0.3);
-    border-radius: 6px;
-  }
-
-  .file-name {
-    color: var(--pink);
-    font-size: 0.9em;
-    word-break: break-all;
-  }
-
-  .remove-proof-btn {
-    background: transparent;
-    color: var(--pink);
-    border: 1px solid var(--pink);
-    border-radius: 4px;
-    width: 24px;
-    height: 24px;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-    flex-shrink: 0;
-    margin-left: 12px;
-  }
-
-  .remove-proof-btn:hover {
-    background: var(--pink);
-    color: #000;
-  }
-
-  /* Total hours container */
-  .total-hours-container {
+  /* Combined summary styling */
+  .combined-summary {
     border: 2px solid var(--pink);
     border-radius: 8px;
     padding: 20px;
     background: rgba(0, 0, 0, 0.6);
+    margin-top: 24px;
     text-align: center;
   }
 
-  .total-hours-container h3 {
+  .combined-summary h3 {
     margin: 0 0 16px 0;
     color: var(--pink);
     font-size: 1.2em;
   }
 
-  .hours-breakdown {
-    display: flex;
+  .summary-content {
     flex-direction: column;
-    gap: 8px;
+    gap: 12px;
+  }
+
+  .hours-section {
+    flex-direction: column;
     align-items: center;
   }
 
-  .total-amount {
+  .hours-section .total-amount {
     font-size: 2em;
     font-weight: bold;
     color: var(--pink);
   }
 
-  .breakdown-details {
+  .hours-section .breakdown-details {
     font-size: 1em;
     color: var(--pink);
     opacity: 0.8;
+  }
+
+  .hours-comparison .comparison-text {
+    color: var(--pink);
+    font-size: 1.1em;
+    font-weight: 600;
+  }
+
+  .hours-comparison .hours-display {
+    color: var(--pink);
+    font-weight: bold;
+  }
+
+  .hours-comparison .target-display {
+    color: var(--pink);
+    font-weight: bold;
+  }
+
+  .expected-rewards p {
+    margin-bottom: 12px;
+    color: var(--pink);
+    font-size: 1em;
+    font-weight: 600;
+  }
+
+  .rewards-breakdown {
+    gap: 8px;
+    color: var(--pink);
+    font-size: 0.9em;
+    opacity: 0.9;
+  }
+
+  .chips-reward,
+  .respin-reward {
+    gap: 8px;
+    color: var(--pink);
+    font-size: 0.9em;
+    opacity: 0.9;
+  }
+
+  .chips-reward span,
+  .respin-reward span {
+    color: var(--pink);
+    font-weight: bold;
   }
 </style>

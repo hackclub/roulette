@@ -206,3 +206,75 @@ export async function updateUserDetails(slackId, formData) {
   
   return { success: true };
 }
+
+export async function submitProjectToAirtable(projectData) {
+  const description = projectData.gameName + " - " + projectData.gameDescription;
+  
+  // Build justification with links and screenshot
+  let justification = "Hackatime projects: " + projectData.hackatimeProjects.join(', ') + "\nAdditional hours: " + projectData.additionalHours + "\nSelf-reported justification: " + projectData.hoursDescription;
+
+  
+  if (projectData.justificationLinks && projectData.justificationLinks.length > 0) {
+    justification += "\nJustification links: " + projectData.justificationLinks.join(', ');
+  }
+  
+  try {
+    // Create record in YSWS Project Submission table
+    const record = await base('YSWS Project Submission').create({
+      'SlackId': projectData.slackId,
+      'Email': projectData.userEmail,
+      'GitHub Username': projectData.githubUsername,
+      'First Name': projectData.firstname,
+      'Last Name': projectData.lastname,
+      'Birthday': projectData.birthday,
+      'Screenshot': [ { "url": projectData.screenshotUrl } ],
+      
+      // Project details
+      'Description': description,
+      'Code URL': projectData.githubUrl,
+      'Playable URL': projectData.playableUrl,
+      // Screenshot URL is now included in the justification field
+      
+      // Hours and projects
+      'Self-reported hours': projectData.totalHours,
+      'Justification': justification,
+      
+      // Address fields
+      'Address (Line 1)': projectData.address.line1,
+      'Address (Line 2)': projectData.address.line2,
+      'City': projectData.address.city,
+      'State / Province': projectData.address.state,
+      'Country': projectData.address.country,
+      'ZIP / Postal Code': projectData.address.zipcode,
+      
+      // Feedback
+      'How did you hear about this?': projectData.howHeard,
+      'What are we doing well?': projectData.doingWell,
+      'How can we improve?': projectData.improve,
+      
+      // Metadata
+      'Round': projectData.roundNumber
+    });
+    
+    // Now link this submission to the UserRounds record
+    try {
+      const currentRound = getCurrentRound();
+      const userRound = await getUserRound(projectData.slackId, currentRound);
+      
+      if (userRound) {
+        // Update the UserRounds record to link to this project submission
+        await base('UserRounds').update(userRound.id, {
+          'projectSubmission': [record.id] // Link to the project submission record
+        });
+      }
+    } catch (linkError) {
+      console.error('Failed to link project submission to UserRounds:', linkError);
+      // Continue even if linking fails - the project submission was still created
+    }
+    
+    return record;
+  } catch (error) {
+    console.error('Error submitting project to Airtable:', error);
+    throw new Error(`Failed to submit project: ${error.message}`);
+  }
+}

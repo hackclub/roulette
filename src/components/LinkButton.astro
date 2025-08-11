@@ -1,11 +1,13 @@
 ---
 import InlineArrow from '../components/InlineArrow.astro';
 
-const { href = "#", newpage = false, arrow = false, backarrow=false, onclick="", class} = Astro.props;
+const { href = "#", newpage = false, arrow = false, backarrow=false, onclick="", class: className, disabled = false } = Astro.props;
+
+const buttonClass = `button linkbutton ${disabled ? 'disabled' : ''} ${className || ''}`.trim();
 ---
 
-<a class="button linkbutton" href={href} target={newpage ? "_blank" : "_self"} onclick={onclick}>
-  {backarrow ? <InlineArrow reversed /> : ""}<slot />{arrow ? <InlineArrow /> : ""}</img>
+<a class={buttonClass} href={disabled ? "#" : href} target={newpage ? "_blank" : "_self"} onclick={disabled ? "" : onclick}>
+  {backarrow ? <InlineArrow reversed /> : ""}<slot />{arrow ? <InlineArrow /> : ""}
 </a>
 
 <style>
@@ -41,5 +43,21 @@ const { href = "#", newpage = false, arrow = false, backarrow=false, onclick="",
 		left: 8px;
 		top: 6px;
 
+	}
+
+	.button.disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+		pointer-events: none;
+	}
+
+	.button.disabled:hover {
+		box-shadow:
+		6px 4px 0 0px var(--black),
+		8px 2px 0 0px var(--pink),
+		8px 6px 0 0px var(--pink),
+		6px 6px 0 0px var(--pink);
+		left: 0px;
+		top: 0px;
 	}
 </style>

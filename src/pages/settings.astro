@@ -1,42 +1,71 @@
 ---
 import InsideLayout from '../layouts/InsideLayout.astro';
 import LinkButton from '../components/LinkButton.astro';
-
-
 import { requireUser, redirectToLogin } from '../lib/auth.js';
 
 let userData;
+let hasDetailsSubmitted = false;
 
 export const prerender = false;
 
 try {
   userData = await requireUser(Astro.request.headers);
+  
+  // Check if user has submitted details by looking for required fields
+  const user = userData.fields;
+  hasDetailsSubmitted = Boolean(
+    user.firstname && 
+    user.lastname && 
+    user.birthday && 
+    user.githubusername && 
+    user.hearabout && 
+    user.doingwell && 
+    user.improve && 
+    user.addr1 && 
+    user.city && 
+    user.state && 
+    user.country && 
+    user.zipcode
+  );
 
 } catch {
   return redirectToLogin();
 }
 
 var user = userData.fields;
-
-
 ---
 
 <InsideLayout currentPage="settings">
-
 
 <main>
   <div class="settings-container">
     <h1>settings</h1>
     
+    {hasDetailsSubmitted ? (
+      <div class="details-status success">
+        <h2>✅ details submitted</h2>
+        <p>we've got your details! you can submit a project now :)</p>
+        <div class="details-actions">
+          <LinkButton href="/settings/details">re-submit to edit details</LinkButton>
+        </div>
+      </div>
+    ) : (
+      <div class="details-status warning">
+        <h2>⚠️ SUBMIT DETAILS</h2>
+        <p>to be able to ship game!</p>
+        <div class="details-actions">
+          <LinkButton href="/settings/details">submit details</LinkButton>
+        </div>
+      </div>
+    )}
+    
     <div class="settings-actions">
-      <LinkButton href="/settings/details">submission details</LinkButton>
       <LinkButton href="/api/auth/logout">log out</LinkButton>
     </div>
   </div>
 </main>
 
 </InsideLayout>
-
 
 <style>
 main {
@@ -57,21 +86,58 @@ h1 {
 
 h2 {
   color: var(--pink);
-  margin-bottom: 16px;
+  margin: 8px 0 16px;
   font-size: 1.3em;
 }
 
-  .settings-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    align-items: center;
-    margin-top: 32px;
-  }
+.details-status {
+  border: 2px solid var(--pink);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 32px;
+  padding-bottom: 32px;
+  text-align: center;
+}
 
-  @media (max-width: 768px) {
-    main {
-      padding: 20px;
-    }
+.details-status.success {
+background: rgba(255, 105, 138, 0.1);
+  border-color: var(--pink);
+}
+
+.details-status.success h2 {
+  color: var(--pink);
+}
+
+.details-status.warning {
+  background: rgba(255, 105, 138, 0.1);
+  border-color: var(--pink);
+}
+
+.details-status.warning h2 {
+  color: var(--pink);
+}
+
+.details-status p {
+  color: var(--pink);
+  margin-bottom: 20px;
+  font-size: 1.1em;
+}
+
+.details-actions {
+  margin-bottom: 0;
+}
+
+.settings-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+  margin-top: 32px;
+}
+
+@media (max-width: 768px) {
+  main {
+    padding: 20px;
   }
+}
 </style>

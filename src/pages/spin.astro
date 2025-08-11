@@ -20,6 +20,21 @@ try {
 
 var user = userData.fields;
 
+// Check if user has submitted details by looking for required fields
+const hasDetailsSubmitted = Boolean(
+  user.firstname && 
+  user.lastname && 
+  user.birthday && 
+  user.githubusername && 
+  user.hearabout && 
+  user.doingwell && 
+  user.improve && 
+  user.addr1 && 
+  user.city && 
+  user.state && 
+  user.country && 
+  user.zipcode
+);
 
 const roundNumber = getCurrentRound();
 const round = await getUserRound(user.slackId, roundNumber);
@@ -62,14 +77,9 @@ if (!hasCamera && (wagerChoice !== '—')) {
   nextHref = '/spin/setting';
   nextLabel = 'continue: wheel 3 of 3 (setting)';
 }
-
-
 ---
 
-
 <InsideLayout currentPage="spin">
-
-
 
 <div class="mobile-cover">
   <div class="mobile-cover__content">
@@ -99,86 +109,124 @@ if (!hasCamera && (wagerChoice !== '—')) {
       <span class="stat">
         respin tokens: <strong>{respinTokens}</strong>
         <div class="tooltip t-right">
-          <p>use this to reset your wager and spin for the round. gain 1 respin token for every 3 hours worked above your wagered hours.</p>
+          <p>use this to try again. gain 1 respin token for every 3 hours worked above your wagered hours.</p>
         </div>
       </span>
     </div>
   </section>
 
-  <section class="summary">
-    <h2>your spins this round</h2>
-    <div class="summary-row">
-        <div class="summary-card" {hasCamera ? { 'data-tooltip': camInfo.description } : {}}>
-          <span class="label">camera</span>
-          <span class="value">{pickedCamera}</span>
-          {hasCamera && (
-            <div class="tooltip">
-              <p class="tip-title">{pickedCamera}</p>
-              <p class="tip-desc">{camInfo.description}</p>
-              <div class="tip-images">
-                {camExKeys.slice(0,4).map((k) => (
-                  <img src={camInfo.examples[k]} alt={k} />
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-        <div class="summary-card" {hasGameplay ? { 'data-tooltip': gameInfo.description } : {}}>
-          <span class="label">gameplay</span>
-          <span class="value">{pickedGameplay}</span>
-          {hasGameplay && (
-            <div class="tooltip">
-              <p class="tip-title">{pickedGameplay}</p>
-              <p class="tip-desc">{gameInfo.description}</p>
-              <div class="tip-images">
-                {gameExKeys.slice(0,4).map((k) => (
-                  <img src={gameInfo.examples[k]} alt={k} />
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-        <div class="summary-card" {hasSetting ? { 'data-tooltip': setInfo.description } : {}}>
-          <span class="label">setting</span>
-          <span class="value">{pickedSetting}</span>
-          {hasSetting && (
-            <div class="tooltip">
-              <p class="tip-title">{pickedSetting}</p>
-              <p class="tip-desc">{setInfo.description}</p>
-              <div class="tip-images">
-                {setExKeys.slice(0,4).map((k) => (
-                  <img src={setInfo.examples[k]} alt={k} />
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-    </div>
-    <h2 style="margin-top:16px;">your wager</h2>
-    <div class="summary-row">
-      <div class="summary-card"><span class="label">hour target</span><span class="value">{hourTarget}</span></div>
-      <div class="summary-card"><span class="label">multiplier</span><span class="value">{multiplier}</span></div>
-      <div class="summary-card"><span class="label">chips wagered</span><span class="value">{numericWager}</span></div>
-    </div>
-    <div class="cta" style="margin-top: 16px;">
-      {!hasWager && (
-        <LinkButton href="/spin/wager" arrow>start spinning now</LinkButton>
-      )}
-      {hasWager && nextHref && (
-        <LinkButton href={nextHref} arrow>{nextLabel}</LinkButton>
-      )}
-      {(respinTokens > 0 && (hasWager || hasCamera || hasGameplay || hasSetting)) && (
-        <div style="margin-top: 12px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-          <span>respin tokens: <strong>{respinTokens}</strong> - </span>
-          <a id="use-respin" class="button linkbutton" href="#" style="margin:0;">use respin token</a>
-        </div>
-      )}
-    </div>
-  </section>
 
-  <section class="submit" style="padding-top: 40px;">
-    <LinkButton href="/spin/submission">submit round</LinkButton>
-  </section>
+  {!hasWager ? (
+    <section class="cta">
+      <LinkButton href="/spin/wager">start the round</LinkButton>
+    </section>
+  ) : (
+    <div>
+      {!hasCamera && !hasGameplay && !hasSetting ? (
+        <section class="cta">
+          <LinkButton href={nextHref}>{nextLabel}</LinkButton>
+        </section>
+      ) : (
+        <div>
+          <section class="summary">
+            <h2>your spins this round</h2>
+            <div class="summary-row">
+              <div class="summary-card">
+                <span class="label">camera</span>
+                <span class="value">{pickedCamera}</span>
+                {camInfo && (
+                  <div class="tooltip">
+                    <div class="tip-title">{pickedCamera}</div>
+                    <p class="tip-desc">{camInfo.description}</p>
+                    <div class="tip-images">
+                      {camExKeys.slice(0,4).map((k) => (
+                        <img src={camInfo.examples[k]} alt={k} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div class="summary-card">
+                <span class="label">gameplay</span>
+                <span class="value">{pickedGameplay}</span>
+                {gameInfo && (
+                  <div class="tooltip">
+                    <div class="tip-title">{pickedGameplay}</div>
+                    <p class="tip-desc">{gameInfo.description}</p>
+                    <div class="tip-images">
+                      {gameExKeys.slice(0,4).map((k) => (
+                        <img src={gameInfo.examples[k]} alt={k} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div class="summary-card">
+                <span class="label">setting</span>
+                <span class="value">{pickedSetting}</span>
+                {setInfo && (
+                  <div class="tooltip">
+                    <div class="tip-title">{pickedSetting}</div>
+                    <p class="tip-desc">{setInfo.description}</p>
+                    <div class="tip-images">
+                      {setExKeys.slice(0,4).map((k) => (
+                        <img src={setInfo.examples[k]} alt={k} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+
+          <section class="wager-summary">
+            <h2>your wager</h2>
+            <div class="summary-row">
+              <div class="summary-card">
+                <span class="label">hour target</span>
+                <span class="value">{hourTarget}</span>
+              </div>
+              <div class="summary-card">
+                <span class="label">multiplier</span>
+                <span class="value">{multiplier}</span>
+              </div>
+              <div class="summary-card">
+                <span class="label">chips wagered</span>
+                <span class="value">{wagerAmount}</span>
+              </div>
+            </div>
+          </section>
+
+          {nextHref ? (
+            <section class="cta">
+              <LinkButton href={nextHref}>{nextLabel}</LinkButton>
+            </section>
+          ) : (
+            <div>
+              <section class="submit" style="padding-top: 40px;">
+                {hasDetailsSubmitted ? (
+                  <LinkButton href="/spin/submission">submit game for round 1</LinkButton>
+                ) : (
+                  <div class="submit-disabled">
+                    <LinkButton disabled>submit game for round 1</LinkButton>
+                    <p class="submit-note">⚠️ complete your details in <a href="/settings">settings</a> first</p>
+                  </div>
+                )}
+              </section>
+            </div>
+          )}
+
+          {(respinTokens > 0 && (hasWager || hasCamera || hasGameplay || hasSetting)) && (
+            <div style="margin-top: 12px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+              <span>respin tokens: <strong>{respinTokens}</strong> - </span>
+              <a id="use-respin" class="button linkbutton" href="#" style="margin:0;">use respin token</a>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )}
+  
   <p>round 1 ends on friday, 15 august, 9am PST.</p>
 
   <!-- Respin confirmation modal -->
@@ -234,11 +282,13 @@ main {
 
 .cta { margin-top: 16px; }
 
-.summary h2 { margin: 0 0 12px 0; font-size: 1.2em; }
+h2 { margin: 0 0 12px 0; font-size: 1.3em; margin-top: 32px; }
+
 .summary-row {
   display: flex;
   gap: 12px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  justify-content: stretch;
 }
 .summary-card {
   border: 2px solid var(--pink);
@@ -249,6 +299,7 @@ main {
   align-items: center;
   justify-content: space-between;
   position: relative;
+  width: 100%;
 }
 .summary-card .label { opacity: 0.85; }
 .summary-card .value { font-weight: 700; color: var(--pink); margin-left: 12px; }
@@ -301,6 +352,51 @@ main {
 }
 .mobile-cover__content { text-align: center; font-size: 1.2em; padding: 20px; }
 
+/* Details warning */
+.details-warning {
+  background: rgba(255, 105, 138, 0.1);
+  border: 2px solid var(--pink);
+  border-radius: 10px;
+  padding: 16px;
+  margin: 20px 0;
+  text-align: center;
+}
+
+.details-warning p {
+  margin: 0;
+  color: var(--pink);
+  font-size: 1.1em;
+}
+
+.details-warning a {
+  color: var(--pink);
+  text-decoration: underline;
+}
+
+.details-warning a:hover {
+  color: #ff8aa3;
+}
+
+/* Submit disabled */
+.submit-disabled {
+  text-align: center;
+}
+
+.submit-disabled .submit-note {
+  margin-top: 12px;
+  color: var(--pink);
+  font-size: 0.9em;
+}
+
+.submit-disabled .submit-note a {
+  color: var(--pink);
+  text-decoration: underline;
+}
+
+.submit-disabled .submit-note a:hover {
+  color: #ff8aa3;
+}
+
 /* Responsive behavior: show cover on small screens, hide main */
 @media (max-width: 599px) {
   .desktop-only { display: none !important; }
@@ -309,7 +405,6 @@ main {
 @media (min-width: 600px) {
   .mobile-cover { display: none; }
 }
-
 </style>
 
 
