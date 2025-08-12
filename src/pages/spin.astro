@@ -206,14 +206,17 @@ if (!hasCamera && (wagerChoice !== '—')) {
             
           </section>
 
-          <p>round 1 ends on friday, 15 august, 9am PST.</p>
+          <p>round {roundNumber} ends on friday, 15 august, 9am PST.</p>
           {hasCamera && hasGameplay && hasSetting ? (
             <section class="submit" style="padding-top: 40px;">
               {hasDetailsSubmitted ? (
-                <LinkButton href="/spin/submission">submit game for round 1</LinkButton>
+                <div class="submit-section">
+                  <LinkButton href="/spin/submission">submit game for round {roundNumber}</LinkButton>
+                  <p class="lifeline-note">💡 didn't hit your target? submit anyway to get some chips back!</p>
+                </div>
               ) : (
                 <div class="submit-disabled">
-                  <LinkButton disabled>submit game for round 1</LinkButton>
+                  <LinkButton disabled>submit game for round {roundNumber}</LinkButton>
                   <p class="submit-note">⚠️ complete your details in <a href="/settings">settings</a> first</p>
                 </div>
               )}
@@ -603,6 +606,19 @@ h2 { margin: 0 0 12px 0; font-size: 1.3em; margin-top: 32px; }
 
 .details-warning a:hover {
   color: #ff8aa3;
+}
+
+/* Submit section */
+.submit-section {
+  text-align: center;
+}
+
+.lifeline-note {
+  margin-top: 12px;
+  color: var(--pink);
+  font-size: 0.9em;
+  opacity: 0.8;
+  font-style: italic;
 }
 
 /* Submit disabled */

@@ -208,15 +208,68 @@ export async function updateUserDetails(slackId, formData) {
 export async function submitProjectToAirtable(projectData) {
   const description = projectData.gameName + " - " + projectData.gameDescription;
   
+  // Parse total hours to number for calculations
+  const totalHoursNum = parseFloat(projectData.totalHours.replace('h', '').replace('min', '')) || 0;
+  
   // Build theme justification combining spins and explanation
   const themeJustification = `Camera: ${projectData.spinCamera}\nGameplay: ${projectData.spinGameplay}\nSetting: ${projectData.spinSetting}\n\nTheme Explanation: ${projectData.themeExplanation}`;
   
-  // Build justification with links and screenshot
-  let justification = "Hackatime projects: " + projectData.hackatimeProjects.join(', ') + "\nAdditional hours: " + projectData.additionalHours + "\nSelf-reported justification: " + projectData.hoursDescription;
-
+  // Build comprehensive justification with all wager and chip information
+  let justification = `=== WAGER & CHIP INFORMATION ===\n`;
+  justification += `Initial chips: ${projectData.initialChips || 0}\n`;
+  justification += `Wager choice: ${projectData.wagerChoice || 'N/A'}\n`;
+  justification += `Wager amount: ${projectData.wagerAmount || 0} chips\n`;
+  justification += `Target hours: ${projectData.targetHours || 0}h\n`;
+  justification += `Total hours submitted: ${projectData.totalHours}\n`;
+  justification += `Hours vs target: ${totalHoursNum >= projectData.targetHours ? 'MET' : 'NOT MET'}\n`;
+  
+  // Calculate and show chip rewards
+  let chipsGained = 0;
+  let finalChips = 0;
+  
+  if (totalHoursNum >= projectData.targetHours) {
+    // Normal wager multiplier chips
+    const multiplierValues = { '1.5x': 1.5, '2x': 2, '3x': 3 };
+    const multiplier = multiplierValues[projectData.wagerChoice] || 1.5;
+    chipsGained = Math.round((projectData.wagerAmount || 0) * multiplier);
+    justification += `Chips gained (wager multiplier): +${chipsGained}\n`;
+  } else {
+    // Lifeline chips
+    const currentChips = projectData.initialChips || 0;
+    chipsGained = Math.max(0, 10 - currentChips);
+    justification += `Chips gained (lifeline): +${chipsGained}\n`;
+  }
+  
+  finalChips = (projectData.initialChips || 0) + chipsGained;
+  justification += `Final chips: ${finalChips}\n\n`;
+  
+  // Add project details
+  justification += `=== PROJECT DETAILS ===\n`;
+  
+  // Add hackatime projects with their times
+  if (projectData.hackatimeProjects && projectData.hackatimeProjects.length > 0) {
+    justification += `Hackatime projects:\n`;
+    projectData.hackatimeProjects.forEach((project, index) => {
+      const projectDetails = projectData.hackatimeProjectDetails?.[index] || {};
+      const hours = projectDetails.hours || 0;
+      const minutes = projectDetails.minutes || 0;
+      const timeString = hours > 0 || minutes > 0 ? ` (${hours}h ${minutes}min)` : '';
+      justification += `  - ${project}${timeString}\n`;
+    });
+  } else {
+    justification += `Hackatime projects: None selected\n`;
+  }
+  
+  justification += `Additional hours: ${projectData.additionalHours}\n`;
+  justification += `Self-reported justification: ${projectData.hoursDescription}\n`;
   
   if (projectData.justificationLinks && projectData.justificationLinks.length > 0) {
-    justification += "\nJustification links: " + projectData.justificationLinks.join(', ');
+    justification += `Justification links: ${projectData.justificationLinks.join(', ')}\n`;
+  }
+  
+  // Add lifeline information to justification
+  if (totalHoursNum < projectData.targetHours) {
+    justification += `\nLIFELINE: User did not meet target hours but received lifeline chips to maintain minimum 10 chips.`;
   }
   
   try {

@@ -187,6 +187,14 @@ const targetHours = wagerData?.targetHours || 0;
                   </span>
                 </div>
               </div>
+              
+              <div class="lifeline-info">
+                <p class="lifeline-title">💡 lifeline system</p>
+                <p class="lifeline-description">even if you don't hit your target hours, submitting your game will give you some chips back to help you keep playing!</p>
+                <div class="lifeline-details">
+                  <span class="lifeline-chips">minimum chips after submission: <strong>10</strong></span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -428,7 +436,7 @@ const targetHours = wagerData?.targetHours || 0;
         
         console.log('Hours calculation:', { currentHours, targetHours, hoursAboveTarget, expectedRespins }); // Debug log
         
-        // Only show expected chips if hours meet or exceed target
+        // Calculate expected chips based on hours vs target
         if (currentHours >= targetHours) {
           // Calculate expected chips (wager amount × multiplier)
           const multiplierValues = { '1.5x': 1.5, '2x': 2, '3x': 3 };
@@ -451,32 +459,30 @@ const targetHours = wagerData?.targetHours || 0;
           }
           chipsTotalSpan.textContent = currentChips + expectedChips;
         } else {
-          // Show that hours are insufficient
-          const hoursNeeded = targetHours - currentHours;
-          // Update the chips-text span instead of the entire chipsReward
+          // Calculate lifeline chips (bring user up to 10 chips minimum)
+          const lifelineChips = Math.max(0, 10 - currentChips);
+          
+          console.log('Lifeline chips calculation (hours < target):', {
+            currentChips,
+            targetChips: 10,
+            lifelineChips,
+            totalChips: currentChips + lifelineChips
+          });
+          
+          // Update the chips-text span to show lifeline chips
           const chipsText = chipsReward.querySelector('.chips-text');
           if (chipsText) {
             if (targetHours > 0) {
-              chipsText.textContent = `need ${hoursNeeded}h more to earn chips`;
+              chipsText.textContent = `+ ${lifelineChips} lifeline chips`;
             } else {
               // If no target hours set, show default chips calculation
               const multiplierValues = { '1.5x': 1.5, '2x': 2, '3x': 3 };
               const multiplier = multiplierValues[wagerChoice] || 1.5;
               const expectedChips = Math.round(wagerAmount * multiplier);
-              
-              console.log('Chips calculation (no target hours):', {
-                wagerAmount,
-                wagerChoice,
-                multiplier,
-                expectedChips,
-                currentChips,
-                totalChips: currentChips + expectedChips
-              });
-              
               chipsText.textContent = `${expectedChips} chips`;
             }
           }
-          chipsTotalSpan.textContent = currentChips;
+          chipsTotalSpan.textContent = currentChips + lifelineChips;
         }
         
         // Update respin tokens
@@ -610,6 +616,10 @@ const targetHours = wagerData?.targetHours || 0;
         hoursDescription: document.getElementById('hours-description').value.trim(),
         totalHours: document.querySelector('.total-amount').textContent,
         hackatimeProjects: Array.from(selectedProjects).map(project => project.value),
+        hackatimeProjectDetails: Array.from(selectedProjects).map(project => {
+          const projectIndex = parseInt(project.id.replace('project-', ''));
+          return hackatimeProjects[projectIndex] || { name: project.value, hours: 0, minutes: 0 };
+        }),
         additionalHours: additionalHours,
         screenshotUrl: document.getElementById('game-screenshot').value.trim() || '',
         justificationLinks: Array.from(document.querySelectorAll('.justification-link'))
@@ -1146,5 +1156,45 @@ const targetHours = wagerData?.targetHours || 0;
   .respin-reward span {
     color: var(--pink);
     font-weight: bold;
+  }
+
+  /* Lifeline info styling */
+  .lifeline-info {
+    margin-top: 20px;
+    padding: 16px;
+    background: rgba(255, 105, 138, 0.1);
+    border: 1px solid rgba(255, 105, 138, 0.3);
+    border-radius: 8px;
+    text-align: center;
+  }
+
+  .lifeline-title {
+    margin: 0 0 8px 0;
+    color: var(--pink);
+    font-weight: 600;
+    font-size: 1em;
+  }
+
+  .lifeline-description {
+    margin: 0 0 12px 0;
+    color: var(--pink);
+    font-size: 0.9em;
+    opacity: 0.9;
+    line-height: 1.4;
+  }
+
+  .lifeline-details {
+    margin-top: 8px;
+  }
+
+  .lifeline-chips {
+    color: var(--pink);
+    font-size: 0.9em;
+    opacity: 0.8;
+  }
+
+  .lifeline-chips strong {
+    color: var(--pink);
+    font-weight: 700;
   }
 </style>

@@ -30,6 +30,7 @@ export async function POST({ request }) {
     const playableUrl = sanitizeString(formData.playableUrl, 500);
     const screenshotUrl = sanitizeString(formData.screenshotUrl, 500);
     const hackatimeProjects = validateArray(formData.hackatimeProjects, 50);
+    const hackatimeProjectDetails = validateArray(formData.hackatimeProjectDetails, 50);
     const additionalHours = validateNumber(formData.additionalHours, 0, 1000);
     const hoursDescription = sanitizeString(formData.hoursDescription, 1000);
     const totalHours = sanitizeString(formData.totalHours, 100);
@@ -96,6 +97,21 @@ export async function POST({ request }) {
     const user = userData.fields;
     const currentRound = getCurrentRound();
     
+    // Get user's wager data to calculate target hours and get wager details
+    let targetHours = 0;
+    let wagerChoice = 'N/A';
+    let wagerAmount = 0;
+    try {
+      const userRound = await getUserRound(user.slackId, currentRound);
+      if (userRound && userRound.fields.wagerChoice) {
+        wagerChoice = userRound.fields.wagerChoice;
+        wagerAmount = userRound.fields.wagerAmount || 0;
+        targetHours = getTargetHours(wagerChoice);
+      }
+    } catch (error) {
+      console.error('Failed to fetch user round for target hours:', error);
+    }
+    
     // Prepare project submission data
     const projectData = {
       slackId: user.slackId,
@@ -119,11 +135,18 @@ export async function POST({ request }) {
       spinSetting: spinSetting,
       themeExplanation: themeExplanation,
       
+      // Wager information
+      wagerChoice: wagerChoice,
+      wagerAmount: wagerAmount,
+      initialChips: Number(user.chips || 0),
+      
       // Hours and projects
       hackatimeProjects: hackatimeProjects,
+      hackatimeProjectDetails: hackatimeProjectDetails,
       additionalHours: additionalHours,
       hoursDescription: hoursDescription,
       totalHours: totalHours,
+      targetHours: targetHours,
       justificationLinks: justificationLinks,
       
       // User details for shipping
@@ -174,12 +197,20 @@ export async function POST({ request }) {
         const hoursAboveTarget = Math.max(0, totalHoursNum - targetHours);
         const respinTokensToAward = Math.floor(hoursAboveTarget / 3);
         
+        // Calculate lifeline chips (bring user up to 10 chips minimum if they didn't hit target)
+        let lifelineChips = 0;
+        if (totalHoursNum < targetHours) {
+          const currentChips = Number(user.chips || 0);
+          lifelineChips = Math.max(0, 10 - currentChips);
+        }
+        
         // Update user's chips and respin tokens in database
-        if (chipsToAward > 0 || respinTokensToAward > 0) {
+        const totalChipsToAward = chipsToAward + lifelineChips;
+        if (totalChipsToAward > 0 || respinTokensToAward > 0) {
           const currentChips = Number(user.chips || 0);
           const currentRespins = Number(user.respinTokens || 0);
           
-          const newChips = currentChips + chipsToAward;
+          const newChips = currentChips + totalChipsToAward;
           const newRespins = currentRespins + respinTokensToAward;
           
           await updateUserRewards(user.slackId, newChips, newRespins);
