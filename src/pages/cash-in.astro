@@ -18,30 +18,191 @@ try {
 var user = userData.fields;
 
 
+
+
+const prizeData = {
+  "spin for a sticker": {
+    "chips": 2,
+    "description": "test your luck & get a random sticker!",
+    "src": "/prizes/random sticker.png"
+  },
+  "pick a sticker": {
+    "chips": 3,
+    "description": "don't test your luck. just choose your fav.",
+    "src": "/prizes/sticker.png"
+  },
+  "$10 steam gift card": {
+    "chips": 25,
+    "description": "$10 on steam to get any game you want!",
+    "src": "/prizes/steam.png"
+  },
+  "$10 itch.io credit": {
+    "chips": 25,
+    "description": "$10 on itch to get any game you want!",
+    "src": "/prizes/itch.png"
+  },
+  "aseprite": {
+    "chips": 40,
+    "description": "get the coolest pixel art editor!",
+    "src": "/prizes/aseprite.png"
+  },
+  "$25 fangamer gift card": {
+    "chips": 60,
+    "description": "$25 to get cool game merch from fangamer!",
+    "src": "/prizes/fangamer.png"
+  },
+  "$30 soft toy credit": {
+    "chips": 75,
+    "description": "$30 grant to buy a soft toy. enough for blahaj or djungelskog or blavingad.",
+    "src": "/prizes/soft toys.png"
+  },
+  "steam publishing credit": {
+    "chips": 200,
+    "description": "$100 grant to publish your game on steam. yay!",
+    "src": "/prizes/steam grant.png"
+  },
+  "$400 console grant": {
+    "chips": 800,
+    "description": "$400 to buy a gaming console, like a nintendo switch, steam deck, or playdate!",
+    "src": "/prizes/console.png"
+  }
+}
+
 ---
 
 <InsideLayout currentPage="cash-in">
 
 
 <main>
-
-<p>cash in your chips for awesome shop items!</p>
-<p>shop is not fully set up yet, but so far we have (chip price in brackets):</p>
-<br/>
-<p>spin for a sticker (2) · choose a sticker (3) · $10 steam gift card (25) · $10 itch.io credit (25) · $25 fangamer gift card (60) · ikea blahaj/djungelskog/blavingad (75) · $100 steam publishing credit (200) · steam deck (800) · nintendo switch (800) </p>
-
+  <h1>🎁 cash in your chips</h1>
+  <p>spend your chips on these awesome prizes!</p>
+  
+  <div class="user-balance">
+    <p>you have <strong>{user.chips}</strong> chips available</p>
+  </div>
+  
+  <div class="prize-grid">
+    {Object.entries(prizeData).map(([prizeName, prize]) => (
+      <div class="prize-card">
+        <img src={prize.src} alt={prizeName} />
+        <h3>{prizeName}</h3>
+        <p class="price">{prize.chips} chips</p>
+        <p class="description">{prize.description}</p>
+      </div>
+    ))}
+  </div>
 </main>
 
 </InsideLayout>
 
 
 <style>
-main {
-  display: flex;
-  flex-flow: column;
-  justify-content: center;
-  height: 100%;
-}
-
-
+  main {
+    padding: 40px;
+    max-width: 1200px;
+    margin: 0 auto;
+    height: 100%;
+    box-sizing: border-box;
+    overflow-y: auto;
+  }
+  
+  h1 {
+    color: var(--pink);
+    text-align: center;
+    margin-bottom: 16px;
+    font-size: 2.5em;
+  }
+  
+  main > p {
+    text-align: center;
+    color: var(--pink);
+    margin-bottom: 40px;
+    font-size: 1.2em;
+    opacity: 0.9;
+  }
+  
+  .user-balance {
+    text-align: center;
+    background: rgba(255, 105, 138, 0.1);
+    border: 1px solid var(--pink);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 40px;
+  }
+  
+  .user-balance p {
+    margin: 0;
+    color: var(--pink);
+    font-size: 1.2em;
+  }
+  
+  .user-balance strong {
+    color: var(--pink);
+    font-size: 1.4em;
+  }
+  
+  .prize-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+  }
+  
+  .prize-card {
+    background: rgba(0, 0, 0, 0.6);
+    border: 2px solid var(--pink);
+    border-radius: 16px;
+    padding: 16px;
+    text-align: center;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .prize-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(255, 105, 138, 0.3);
+  }
+  
+  .prize-card img {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    border: 1px solid var(--pink);
+  }
+  
+  .prize-card h3 {
+    color: var(--pink);
+    margin: 0 0 12px 0;
+    font-size: 1.2em;
+  }
+  
+  .price {
+    color: var(--pink);
+    font-weight: 700;
+    font-size: 1.1em;
+    margin: 0 0 12px 0;
+  }
+  
+  .description {
+    color: var(--pink);
+    opacity: 0.8;
+    margin: 0;
+    line-height: 1.4;
+    font-size: 0.9em;
+  }
+  
+  @media (max-width: 768px) {
+    .prize-grid {
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+    
+    main {
+      padding: 20px;
+    }
+    
+    h1 {
+      font-size: 2em;
+    }
+  }
 </style>
