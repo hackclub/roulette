@@ -208,6 +208,9 @@ export async function updateUserDetails(slackId, formData) {
 export async function submitProjectToAirtable(projectData) {
   const description = projectData.gameName + " - " + projectData.gameDescription;
   
+  // Build theme justification combining spins and explanation
+  const themeJustification = `Camera: ${projectData.spinCamera}\nGameplay: ${projectData.spinGameplay}\nSetting: ${projectData.spinSetting}\n\nTheme Explanation: ${projectData.themeExplanation}`;
+  
   // Build justification with links and screenshot
   let justification = "Hackatime projects: " + projectData.hackatimeProjects.join(', ') + "\nAdditional hours: " + projectData.additionalHours + "\nSelf-reported justification: " + projectData.hoursDescription;
 
@@ -236,6 +239,7 @@ export async function submitProjectToAirtable(projectData) {
       // Hours and projects
       'Self-reported hours': projectData.totalHours,
       'Justification': justification,
+      'Theme Justification': themeJustification,
       
       // Address fields
       'Address (Line 1)': projectData.address.line1,

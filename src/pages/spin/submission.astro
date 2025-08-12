@@ -41,7 +41,10 @@ try {
           wagerAmount: userRound.fields.wagerAmount,
           currentChips: user.fields.chips,
           currentRespins: user.fields.respinTokens || 0,
-          targetHours: getTargetHours(userRound.fields.wagerChoice)
+          targetHours: getTargetHours(userRound.fields.wagerChoice),
+          spinCamera: userRound.fields.spinCamera || '—',
+          spinGameplay: userRound.fields.spinGameplay || '—',
+          spinSetting: userRound.fields.spinSetting || '—'
         };
       }
     }
@@ -124,6 +127,24 @@ const targetHours = wagerData?.targetHours || 0;
         </div>
 
         <div class="form-section">
+          <label for="theme-justification">theme justification</label>
+          <div class="theme-justification-container">
+            <div class="spins-display">
+              <p class="spins-label">your spins were:</p>
+              <div class="spins-list">
+                <span class="spin-item">camera: <strong>{wagerData?.spinCamera || '—'}</strong></span>
+                <span class="spin-item">gameplay: <strong>{wagerData?.spinGameplay || '—'}</strong></span>
+                <span class="spin-item">setting: <strong>{wagerData?.spinSetting || '—'}</strong></span>
+              </div>
+            </div>
+            <div class="justification-input">
+              <label for="theme-explanation">explain how your game links to the themes given</label>
+              <textarea id="theme-explanation" name="theme-explanation" class="styled-textarea" placeholder="describe how your game connects to the camera, gameplay, and setting themes you spun... (it's ok if it's a bit off — as long as you tried!)" required></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
           <label for="additional-hours">additional hours</label>
           <div class="additional-hours-container">
             <div class="hours-input-row">
@@ -141,7 +162,7 @@ const targetHours = wagerData?.targetHours || 0;
                 </div>
               </div>
               <button type="button" id="add-justification-link" class="add-link-btn">+ add another link</button>
-              <p class="help-text">put your proof files (PDFs, screenshots, etc.) in your github repo and paste the direct links here</p>
+              <p class="help-text">put your proof files (PDFs, screenshots, etc.) into your github repo and paste the links here!</p>
             </div>
           </div>
         </div>
@@ -179,7 +200,7 @@ const targetHours = wagerData?.targetHours || 0;
   </main>
 </Layout>
 
-<script define:vars={{ hackatimeProjects }}>
+<script define:vars={{ hackatimeProjects, wagerData }}>
   document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('project-search');
     const projectItems = document.querySelectorAll('.project-item');
@@ -539,7 +560,7 @@ const targetHours = wagerData?.targetHours || 0;
       
       // Validate required fields
       const requiredFields = [
-        'game-name', 'game-description', 'github-url', 'playable-url'
+        'game-name', 'game-description', 'github-url', 'playable-url', 'theme-explanation'
       ];
 
       let isValid = true;
@@ -549,7 +570,8 @@ const targetHours = wagerData?.targetHours || 0;
         const field = document.querySelector(`[name="${fieldName}"]`);
         if (!field.value.trim()) {
           isValid = false;
-          missingFields.push(fieldName.replace('-', ' '));
+          const displayName = fieldName === 'theme-explanation' ? 'theme explanation' : fieldName.replace('-', ' ');
+          missingFields.push(displayName);
         }
       });
 
@@ -592,7 +614,11 @@ const targetHours = wagerData?.targetHours || 0;
         screenshotUrl: document.getElementById('game-screenshot').value.trim() || '',
         justificationLinks: Array.from(document.querySelectorAll('.justification-link'))
           .map(input => input.value.trim())
-          .filter(link => link.length > 0)
+          .filter(link => link.length > 0),
+        themeExplanation: document.getElementById('theme-explanation').value.trim(),
+        spinCamera: wagerData?.spinCamera || '—',
+        spinGameplay: wagerData?.spinGameplay || '—',
+        spinSetting: wagerData?.spinSetting || '—'
       };
 
       // Disable submit button and show loading state
@@ -955,6 +981,55 @@ const targetHours = wagerData?.targetHours || 0;
     opacity: 0.7;
     font-style: italic;
     padding: 20px;
+  }
+
+  /* Theme justification container */
+  .theme-justification-container {
+    border: 2px solid var(--pink);
+    border-radius: 8px;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.4);
+  }
+
+  .spins-display {
+    margin-bottom: 16px;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 6px;
+    border: 1px solid rgba(255, 105, 138, 0.3);
+  }
+
+  .spins-label {
+    margin: 0 0 8px 0;
+    color: var(--pink);
+    font-weight: 600;
+    font-size: 0.95em;
+  }
+
+  .spins-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .spin-item {
+    color: var(--pink);
+    font-size: 0.9em;
+    opacity: 0.9;
+  }
+
+  .spin-item strong {
+    color: var(--pink);
+    font-weight: 700;
+  }
+
+  .justification-input {
+    margin-top: 16px;
+  }
+
+  .justification-input label {
+    margin-bottom: 8px;
+    font-size: 1em;
   }
 
   /* Screenshot preview */

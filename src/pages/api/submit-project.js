@@ -34,10 +34,14 @@ export async function POST({ request }) {
     const hoursDescription = sanitizeString(formData.hoursDescription, 1000);
     const totalHours = sanitizeString(formData.totalHours, 100);
     const justificationLinks = validateArray(formData.justificationLinks, 20).map(link => sanitizeString(link, 500));
+    const themeExplanation = sanitizeString(formData.themeExplanation, 2000);
+    const spinCamera = sanitizeString(formData.spinCamera, 100);
+    const spinGameplay = sanitizeString(formData.spinGameplay, 100);
+    const spinSetting = sanitizeString(formData.spinSetting, 100);
     
     // Validate required fields
     const requiredFields = [
-      'gameName', 'gameDescription', 'githubUrl', 'playableUrl'
+      'gameName', 'gameDescription', 'githubUrl', 'playableUrl', 'themeExplanation'
     ];
     
     for (const field of requiredFields) {
@@ -108,6 +112,12 @@ export async function POST({ request }) {
       githubUrl: githubUrl,
       playableUrl: playableUrl,
       screenshotUrl: screenshotUrl,
+      
+      // Theme information
+      spinCamera: spinCamera,
+      spinGameplay: spinGameplay,
+      spinSetting: spinSetting,
+      themeExplanation: themeExplanation,
       
       // Hours and projects
       hackatimeProjects: hackatimeProjects,
