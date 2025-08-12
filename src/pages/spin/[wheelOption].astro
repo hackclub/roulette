@@ -157,16 +157,21 @@ async function spin(wheelOption) {
   })
   .then(async (res) => {
     if (!res.ok) {
-      const msg = await res.text();
-      console.warn('spin rejected:', msg);
-      alert(msg || 'Invalid selection');
+      const errorData = await res.json();
+      console.warn('spin rejected:', errorData.error || 'Unknown error');
+      alert(errorData.error || 'Invalid selection');
       return null;
     }
     return res.json();
   })
   .then((data) => {
     if (!data) return; // do not spin on invalid selection
-    spinWheel(data);
+    if (data.success && data.result) {
+      spinWheel(data.result);
+    } else {
+      console.error('Invalid response format:', data);
+      alert('Invalid response from server');
+    }
   })
   .catch(err => {
     console.error('spin error:', err);

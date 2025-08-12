@@ -110,22 +110,31 @@ export async function resetRoundWithRespin(slackId) {
 }
 
 
-export async function isSpunForCurrentWheelRound({ slackId, wheelOption }) {
-  const currentRound = getCurrentRound();
-  const wheelOptionCaps = capitalise(wheelOption);
+export async function isSpunForCurrentWheelRound(slackId, wheelOption) {
+  const userRound = await getUserRound(slackId, getCurrentRound());
+  if (!userRound) return false;
+  
+  const fieldName = `spin${wheelOption.charAt(0).toUpperCase() + wheelOption.slice(1)}`;
+  return userRound.fields[fieldName] || false;
+}
 
-  const userRound = await getUserRound(slackId, currentRound);
-
-  if (userRound) {
-    var userRoundInfo = userRound.fields;
-
-    if (userRoundInfo[`spin${wheelOptionCaps}`]) {
-      return true
-    } else {
-      return false
-    }
+export async function updateUserRewards(slackId, newChips, newRespins) {
+  const user = await getUserBySlackId(slackId);
+  if (!user) throw new Error('user not found');
+  
+  const updateData = {};
+  if (newChips !== undefined) {
+    updateData.chips = newChips;
   }
-  return true
+  if (newRespins !== undefined) {
+    updateData.respinTokens = newRespins;
+  }
+  
+  if (Object.keys(updateData).length > 0) {
+    await base('Users').update(user.id, updateData);
+  }
+  
+  return { chips: newChips, respinTokens: newRespins };
 }
 
 export async function hasEnoughChips(slackId, wageredChips) {

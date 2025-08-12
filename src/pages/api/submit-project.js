@@ -1,7 +1,13 @@
 import { requireUser } from '../../lib/auth.js';
-import { submitProjectToAirtable } from '../../lib/airtable.js';
+import { submitProjectToAirtable, getUserRound, updateUserRewards } from '../../lib/airtable.js';
 import { getCurrentRound } from '../../lib/data.js';
 import { getSecurityHeaders, sanitizeString, isValidUrl, validateNumber, validateArray } from '../../lib/security.js';
+
+// Helper function to calculate target hours from wager choice
+function getTargetHours(wagerChoice) {
+  const multiplierToHours = { '1.5x': 5, '2x': 10, '3x': 25 };
+  return multiplierToHours[wagerChoice] || 0;
+}
 
 export async function POST({ request }) {
   try {
@@ -133,6 +139,46 @@ export async function POST({ request }) {
 
     // Submit to Airtable
     const result = await submitProjectToAirtable(projectData);
+    
+    // Calculate and award rewards automatically
+    try {
+      // Get user's current wager data to calculate rewards
+      const userRound = await getUserRound(user.slackId, currentRound);
+      if (userRound) {
+        const wagerChoice = userRound.fields.wagerChoice;
+        const wagerAmount = userRound.fields.wagerAmount;
+        const targetHours = getTargetHours(wagerChoice);
+        
+        // Calculate total hours from submission
+        const totalHoursNum = parseFloat(totalHours.replace('h', '').replace('min', '')) || 0;
+        
+        // Calculate expected chips (only if hours meet target)
+        let chipsToAward = 0;
+        if (totalHoursNum >= targetHours) {
+          const multiplierValues = { '1.5x': 1.5, '2x': 2, '3x': 3 };
+          const multiplier = multiplierValues[wagerChoice] || 1.5;
+          chipsToAward = Math.round(wagerAmount * multiplier);
+        }
+        
+        // Calculate respin tokens (1 for every 3 hours above target)
+        const hoursAboveTarget = Math.max(0, totalHoursNum - targetHours);
+        const respinTokensToAward = Math.floor(hoursAboveTarget / 3);
+        
+        // Update user's chips and respin tokens in database
+        if (chipsToAward > 0 || respinTokensToAward > 0) {
+          const currentChips = Number(user.chips || 0);
+          const currentRespins = Number(user.respinTokens || 0);
+          
+          const newChips = currentChips + chipsToAward;
+          const newRespins = currentRespins + respinTokensToAward;
+          
+          await updateUserRewards(user.slackId, newChips, newRespins);
+        }
+      }
+    } catch (rewardError) {
+      console.error('Error awarding rewards:', rewardError);
+      // Don't fail the submission if reward calculation fails
+    }
     
     return new Response(JSON.stringify({ success: true, result }), {
       status: 200,

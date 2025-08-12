@@ -266,8 +266,10 @@ async function chooseWager(choice, amount) {
   console.log(data);
   console.log("spun!")
 
-  if (data == "success") {
+  if (data.success) {
     window.location.href = '/spin/camera';
+  } else {
+    alert('Wager failed: ' + (data.error || 'Unknown error'));
   }
 
 }

@@ -52,6 +52,9 @@ const hasSetting = pickedSetting !== '—';
 const hasWager = wagerChoice !== '—';
 const respinTokens = Number(user.respinTokens || 0);
 
+// Check if user has submitted a project for this round
+const hasSubmittedProject = Boolean(fields.projectSubmission && fields.projectSubmission.length > 0);
+
 // Derive wager display details
 const multiplier = typeof wagerChoice === 'string' ? wagerChoice : String(wagerChoice || '—');
 const multiplierToHours = { '1.5x': '5h', '2x': '10h', '3x': '25h' };
@@ -122,12 +125,17 @@ if (!hasCamera && (wagerChoice !== '—')) {
     </section>
   ) : (
     <div>
-      {!hasCamera && !hasGameplay && !hasSetting ? (
-        <section class="cta">
-          <LinkButton href={nextHref}>{nextLabel}</LinkButton>
+      {hasSubmittedProject ? (
+        <section class="congratulations">
+          <h2>🎉 congratulations! you submitted!</h2>
+          <p>check out your game in the <a href="/gallery">gallery tab</a>.</p>
+          
+          <div class="countdown">
+            <p>next round begins in <span id="countdown-timer">calculating...</span></p>
+          </div>
         </section>
-      ) : (
-        <div>
+      ) : hasWager ? (
+        <>
           <section class="summary">
             <h2>your spins this round</h2>
             <div class="summary-row">
@@ -169,8 +177,8 @@ if (!hasCamera && (wagerChoice !== '—')) {
                     <div class="tip-title">{pickedSetting}</div>
                     <p class="tip-desc">{setInfo.description}</p>
                     <div class="tip-images">
-                      {setExKeys.slice(0,4).map((k) => (
-                        <img src={setInfo.examples[k]} alt={k} />
+                      {camExKeys.slice(0,4).map((k) => (
+                        <img src={camInfo.examples[k]} alt={k} />
                       ))}
                     </div>
                   </div>
@@ -195,39 +203,52 @@ if (!hasCamera && (wagerChoice !== '—')) {
                 <span class="value">{wagerAmount}</span>
               </div>
             </div>
+            
           </section>
 
+          <p>round 1 ends on friday, 15 august, 9am PST.</p>
+          {hasCamera && hasGameplay && hasSetting ? (
+            <section class="submit" style="padding-top: 40px;">
+              {hasDetailsSubmitted ? (
+                <LinkButton href="/spin/submission">submit game for round 1</LinkButton>
+              ) : (
+                <div class="submit-disabled">
+                  <LinkButton disabled>submit game for round 1</LinkButton>
+                  <p class="submit-note">⚠️ complete your details in <a href="/settings">settings</a> first</p>
+                </div>
+              )}
+            </section>
+          ) : null}
+        </>
+      ) : null}
+
+      {!hasCamera && !hasGameplay && !hasSetting ? (
+        <section class="cta">
+          <LinkButton href={nextHref}>{nextLabel}</LinkButton>
+        </section>
+      ) : (
+        <div>
           {nextHref ? (
             <section class="cta">
               <LinkButton href={nextHref}>{nextLabel}</LinkButton>
             </section>
-          ) : (
-            <div>
-              <section class="submit" style="padding-top: 40px;">
-                {hasDetailsSubmitted ? (
-                  <LinkButton href="/spin/submission">submit game for round 1</LinkButton>
-                ) : (
-                  <div class="submit-disabled">
-                    <LinkButton disabled>submit game for round 1</LinkButton>
-                    <p class="submit-note">⚠️ complete your details in <a href="/settings">settings</a> first</p>
-                  </div>
-                )}
-              </section>
-            </div>
-          )}
-
-          {(respinTokens > 0 && (hasWager || hasCamera || hasGameplay || hasSetting)) && (
+          ) : null}
+        </div>
+      )}
+ 
+          {(respinTokens > 0 && (hasWager || hasCamera || hasGameplay || hasSetting) && !hasSubmittedProject) && (
             <div style="margin-top: 12px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
               <span>respin tokens: <strong>{respinTokens}</strong> - </span>
               <a id="use-respin" class="button linkbutton" href="#" style="margin:0;">use respin token</a>
             </div>
           )}
+           
         </div>
       )}
     </div>
-  )}
   
-  <p>round 1 ends on friday, 15 august, 9am PST.</p>
+  
+  
 
   <!-- Respin confirmation modal -->
   <div id="respin-modal" class="modal" aria-hidden="true">
@@ -241,8 +262,99 @@ if (!hasCamera && (wagerChoice !== '—')) {
   </div>
 </main>
 
-</InsideLayout>
+<script define:vars={{ roundNumber }}>
+  // Countdown timer for next round
+  function updateCountdown() {
+    const countdownElement = document.getElementById('countdown-timer');
+    if (!countdownElement) return;
 
+    // Round dates (PST)
+    const roundStartDates = [
+      new Date('2025-08-08T21:00:00-08:00'), // Round 1 start: Friday 8 August 9pm
+      new Date('2025-08-15T17:00:00-08:00'), // Round 2 start: Friday 15 August 5pm
+      new Date('2025-08-22T17:00:00-08:00'), // Round 3 start: Friday 22 August 5pm
+      new Date('2025-09-05T17:00:00-08:00')  // Round 4 start: Friday 5 September 5pm
+    ];
+    
+    const now = new Date();
+    const currentRound = roundNumber; // Use the actual current round from frontmatter
+    
+    // Calculate next round start time
+    const nextRoundStart = roundStartDates[currentRound]; // Next round after current
+    
+    if (nextRoundStart > now) {
+      const timeDiff = nextRoundStart - now;
+      const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+      
+      countdownElement.textContent = `${days}d ${hours}h ${minutes}min`;
+    } else {
+      countdownElement.textContent = 'starting soon!';
+    }
+  }
+
+  // Update countdown every minute
+  updateCountdown();
+  setInterval(updateCountdown, 60000);
+
+  // Respin button functionality
+  const btn = document.getElementById('use-respin');
+  if (btn) {
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const modal = document.getElementById('respin-modal');
+      modal.setAttribute('aria-hidden', 'false'); // Show modal
+
+      const confirmBtn = document.getElementById('confirm-respin');
+      const cancelBtn = document.getElementById('cancel-respin');
+
+      const handleConfirm = async () => {
+        confirmBtn.setAttribute('disabled', 'true');
+        confirmBtn.textContent = 'resetting your spin...';
+        cancelBtn.setAttribute('disabled', 'true');
+
+        try {
+          const res = await fetch('/api/spin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ respin: true })
+          });
+          if (!res.ok) {
+            const errorData = await res.json();
+            alert(errorData.error || 'Respin failed');
+            confirmBtn.removeAttribute('disabled');
+            confirmBtn.textContent = 'use respin token';
+            cancelBtn.removeAttribute('disabled');
+            modal.setAttribute('aria-hidden', 'true'); // Hide modal
+            return;
+          }
+          window.location.reload(); // Refresh page
+        } catch (err) {
+          console.error('respin error', err);
+          alert('Respin failed');
+          confirmBtn.removeAttribute('disabled');
+          confirmBtn.textContent = 'use respin token';
+          cancelBtn.removeAttribute('disabled');
+          modal.setAttribute('aria-hidden', 'true'); // Hide modal
+        }
+        confirmBtn.removeEventListener('click', handleConfirm);
+        cancelBtn.removeEventListener('click', handleCancel);
+      };
+
+      const handleCancel = () => {
+        modal.setAttribute('aria-hidden', 'true'); // Hide modal
+        confirmBtn.removeEventListener('click', handleConfirm);
+        cancelBtn.removeEventListener('click', handleCancel);
+      };
+
+      confirmBtn.addEventListener('click', handleConfirm);
+      cancelBtn.addEventListener('click', handleCancel);
+    });
+  }
+</script>
+
+</InsideLayout>
 
 <style>
 main {
@@ -302,7 +414,13 @@ h2 { margin: 0 0 12px 0; font-size: 1.3em; margin-top: 32px; }
   width: 100%;
 }
 .summary-card .label { opacity: 0.85; }
-.summary-card .value { font-weight: 700; color: var(--pink); margin-left: 12px; }
+.summary-card .value { 
+  font-weight: 700; 
+  color: var(--pink); 
+  margin-left: 12px; 
+  text-align: right;
+  flex: 1;
+}
 
 .summary-card .tooltip {
   display: none;
@@ -321,6 +439,116 @@ h2 { margin: 0 0 12px 0; font-size: 1.3em; margin-top: 32px; }
 .tip-desc { margin: 0 0 8px 0; opacity: 0.9; }
 .tip-images { display: flex; gap: 6px; flex-wrap: wrap; }
 .tip-images img { height: 70px; width: auto; object-fit: cover; border-radius: 6px; border: 1px solid var(--pink); }
+
+/* Congratulations section */
+.congratulations {
+  text-align: center;
+  padding: 40px 20px;
+
+  border-radius: 16px;
+  background: rgba(255, 105, 138, 0.05);
+  margin-top: 40px;
+}
+
+.congratulations h2 {
+  color: var(--pink);
+  font-size: 1.8em;
+  margin-bottom: 16px;
+}
+
+.congratulations p {
+  font-size: 1.2em;
+  margin-bottom: 24px;
+  opacity: 0.9;
+}
+
+.congratulations a {
+  color: var(--pink);
+  text-decoration: underline;
+}
+
+.congratulations a:hover {
+  color: #ff8aa3;
+}
+
+/* Rewards summary */
+.rewards-summary {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--pink);
+  border-radius: 12px;
+  padding: 24px;
+  margin: 24px 0;
+  text-align: left;
+}
+
+.rewards-summary h3 {
+  color: var(--pink);
+  font-size: 1.3em;
+  margin: 0 0 16px 0;
+  text-align: center;
+}
+
+.rewards-grid {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.reward-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: rgba(255, 105, 138, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 105, 138, 0.3);
+}
+
+.reward-label {
+  font-weight: 600;
+  color: var(--pink);
+}
+
+.reward-value {
+  font-weight: 700;
+  color: var(--pink);
+  font-size: 1.1em;
+}
+
+.hours-info {
+  text-align: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 105, 138, 0.2);
+}
+
+.hours-info p {
+  margin: 0;
+  font-size: 1em;
+}
+
+.hours-info strong {
+  color: var(--pink);
+}
+
+.countdown {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--pink);
+  border-radius: 8px;
+  padding: 16px;
+  display: inline-block;
+}
+
+.countdown p {
+  margin: 0;
+  font-size: 1.1em;
+}
+
+#countdown-timer {
+  color: var(--pink);
+  font-weight: 700;
+}
 
 /* Modal */
 .modal[aria-hidden="true"] { display: none; }
@@ -406,44 +634,3 @@ h2 { margin: 0 0 12px 0; font-size: 1.3em; margin-top: 32px; }
   .mobile-cover { display: none; }
 }
 </style>
-
-
-<script client:load>
-  const trigger = document.getElementById('use-respin');
-  const modal = document.getElementById('respin-modal');
-  const confirmBtn = document.getElementById('confirm-respin');
-  const cancelBtn = document.getElementById('cancel-respin');
-
-  function openModal(){ modal?.setAttribute('aria-hidden', 'false'); }
-  function closeModal(){ modal?.setAttribute('aria-hidden', 'true'); }
-
-  if (trigger && modal && confirmBtn && cancelBtn) {
-    trigger.addEventListener('click', (e) => { e.preventDefault(); openModal(); });
-    cancelBtn.addEventListener('click', (e) => { e.preventDefault(); closeModal(); });
-    confirmBtn.addEventListener('click', async (e) => {
-      e.preventDefault();
-      confirmBtn.setAttribute('disabled', 'true');
-      confirmBtn.textContent = 'resetting your spin...';
-      try {
-        const res = await fetch('/api/spin', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ respin: true })
-        });
-        if (!res.ok) {
-          const msg = await res.text();
-          alert(msg || 'Respin failed');
-          confirmBtn.removeAttribute('disabled');
-          confirmBtn.textContent = 'use respin token';
-          return;
-        }
-        window.location.reload();
-      } catch (err) {
-        console.error('respin error', err);
-        alert('Respin failed');
-        confirmBtn.removeAttribute('disabled');
-        confirmBtn.textContent = 'use respin token';
-      }
-    });
-  }
-</script>

@@ -22,7 +22,7 @@ export async function GET(request) {
     // Fetch hackatime projects
     const projects = await getProjectsSinceRoundNum(slackId, roundNum);
     
-    return new Response(JSON.stringify({ projects }), {
+    return new Response(JSON.stringify({ success: true, projects }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     });

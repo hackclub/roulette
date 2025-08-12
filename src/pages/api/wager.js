@@ -46,7 +46,7 @@ export async function GET({ request }) {
       targetHours: getTargetHours(userRound.fields.wagerChoice)
     };
 
-    return new Response(JSON.stringify(wagerData), {
+    return new Response(JSON.stringify({ success: true, data: wagerData }), {
       status: 200,
       headers
     });

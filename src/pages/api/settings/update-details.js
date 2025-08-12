@@ -4,7 +4,7 @@ import { getSecurityHeaders, sanitizeString } from '../../../lib/security.js';
 
 // Test GET endpoint to verify the route is working
 export async function GET() {
-  return new Response(JSON.stringify({ message: 'API route is working' }), {
+  return new Response(JSON.stringify({ success: true, message: 'API route is working' }), {
     status: 200,
     headers: getSecurityHeaders()
   });

@@ -51,7 +51,7 @@ export async function POST({ request }) {
   if (respin === true) {
     try {
       const result = await resetRoundWithRespin(payload.userId);
-      return new Response(JSON.stringify(result), { 
+      return new Response(JSON.stringify({ success: true, result }), { 
         status: 200,
         headers
       });
@@ -110,7 +110,7 @@ export async function POST({ request }) {
 
   var spinResult = await userSpinWheel(payload.userId, selectedOptions, wheelOption);
 
-  return new Response(JSON.stringify(spinResult), { 
+  return new Response(JSON.stringify({ success: true, result: spinResult }), { 
     status: 200,
     headers
   });
