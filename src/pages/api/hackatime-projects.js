@@ -1,32 +1,6 @@
 import { requireUser } from '../../lib/auth.js';
 import { getCurrentRound } from '../../lib/data.js';
-import { getProjectsSinceRoundNum } from '../../lib/hackatime.js';
-import { getSecurityHeaders, validateArray } from '../../lib/security.js';
-
-// Rate limiter instance - 10 requests per minute per user
-const rateLimiter = new Map();
-
-function isRateLimited(slackId) {
-  const now = Date.now();
-  const windowMs = 60000; // 1 minute
-  const maxRequests = 10;
-  
-  if (!rateLimiter.has(slackId)) {
-    rateLimiter.set(slackId, [now]);
-    return false;
-  }
-  
-  const requests = rateLimiter.get(slackId);
-  const recentRequests = requests.filter(time => now - time < windowMs);
-  
-  if (recentRequests.length >= maxRequests) {
-    return true;
-  }
-  
-  recentRequests.push(now);
-  rateLimiter.set(slackId, recentRequests);
-  return false;
-}
+import { getSecurityHeaders } from '../../lib/security.js';
 
 export async function GET({ request }) {
   try {
@@ -42,27 +16,18 @@ export async function GET({ request }) {
       });
     }
 
-    // Check rate limiting
-    if (isRateLimited(slackId)) {
-      return new Response(JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }), {
-        status: 429,
-        headers: getSecurityHeaders()
-      });
-    }
-
-    // Fetch hackatime projects for this user
-    const projects = await getProjectsSinceRoundNum(slackId, currentRound);
-
-    // Validate and sanitize projects data
-    const validatedProjects = validateArray(projects, 100);
-
-    return new Response(JSON.stringify({ projects: validatedProjects }), {
+    // Return user info and round data for client-side hackatime API call
+    return new Response(JSON.stringify({ 
+      slackId,
+      currentRound,
+      roundStartDate: getRoundStartDate(currentRound)
+    }), {
       status: 200,
       headers: getSecurityHeaders()
     });
 
   } catch (error) {
-    console.error('Error fetching hackatime projects:', error);
+    console.error('Error in hackatime-projects API:', error);
     
     if (error.message.includes('redirect')) {
       return new Response(JSON.stringify({ error: 'Authentication required' }), {
@@ -72,11 +37,22 @@ export async function GET({ request }) {
     }
 
     return new Response(JSON.stringify({ 
-      error: 'Failed to fetch projects',
+      error: 'Failed to get user data',
       details: error.message
     }), {
       status: 500,
       headers: getSecurityHeaders()
     });
   }
+}
+
+// Helper function to get round start date
+function getRoundStartDate(roundNum) {
+  const roundStartDates = {
+    1: "2025-08-07",
+    2: "2025-08-14", 
+    3: "2025-08-21",
+    4: "2025-08-28"
+  };
+  return roundStartDates[roundNum] || null;
 }

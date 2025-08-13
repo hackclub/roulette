@@ -212,37 +212,57 @@ const targetHours = wagerData?.targetHours || 0;
       projectsError.style.display = 'none';
 
       try {
-        const response = await fetch('/api/hackatime-projects', {
-          credentials: 'include', // This ensures cookies are sent with the request
+        // First get user data and round info from our server
+        const userResponse = await fetch('/api/hackatime-projects', {
+          credentials: 'include',
           headers: {
             'Accept': 'application/json'
           }
         });
         
-        if (!response.ok) {
-          // Handle different error status codes
-          if (response.status === 429) {
-            throw new Error('Rate limit exceeded. Please wait a minute and try again.');
-          } else if (response.status === 401) {
-            throw new Error('Authentication required. Please refresh the page and try again.');
-          } else if (response.status === 400) {
-            throw new Error('Invalid request. Please refresh the page and try again.');
-          } else {
-            throw new Error(`Server error (${response.status}). Please try again later.`);
-          }
+        if (!userResponse.ok) {
+          throw new Error(`Failed to get user data: ${userResponse.status}`);
         }
         
-        const data = await response.json();
-
-        // Ensure we have a valid response
-        if (!data || typeof data !== 'object') {
-          throw new Error('Invalid API response format');
+        const userData = await userResponse.json();
+        
+        if (!userData.slackId || !userData.roundStartDate) {
+          throw new Error('Missing user data or round information');
         }
 
-        if (data.projects && Array.isArray(data.projects) && data.projects.length > 0) {
-          hackatimeProjects = data.projects; // Store projects data
+        // Now make the actual Hackatime API call from the client
+        const hackatimeUrl = `https://hackatime.hackclub.com/api/v1/users/${userData.slackId}/stats?features=projects&start_date=${userData.roundStartDate}`;
+        
+        const hackatimeResponse = await fetch(hackatimeUrl, {
+          headers: { 
+            'Accept': 'application/json'
+          }
+        });
+
+        if (!hackatimeResponse.ok) {
+          if (hackatimeResponse.status === 429) {
+            throw new Error('Hackatime API rate limit exceeded. Please wait a minute and try again.');
+          } else if (hackatimeResponse.status === 404) {
+            throw new Error('No projects found for this user/round.');
+          } else {
+            throw new Error(`Hackatime API error (${hackatimeResponse.status}). Please try again later.`);
+          }
+        }
+
+        const hackatimeData = await hackatimeResponse.json();
+
+        if (!hackatimeData?.data?.projects) {
+          projectsContent.innerHTML = '<p class="no-projects">No projects found for this round</p>';
+          projectsContent.style.display = 'block';
+          return;
+        }
+
+        const projects = hackatimeData.data.projects;
+        
+        if (projects.length > 0) {
+          hackatimeProjects = projects; // Store projects data
           projectsContent.innerHTML = ''; // Clear previous content
-          data.projects.forEach((project, index) => {
+          projects.forEach((project, index) => {
             const projectItem = document.createElement('div');
             projectItem.className = 'project-item';
             
@@ -275,7 +295,7 @@ const targetHours = wagerData?.targetHours || 0;
         console.error('Failed to fetch hackatime projects:', error);
         
         // Show specific error message
-        if (error.message.includes('Rate limit exceeded')) {
+        if (error.message.includes('rate limit')) {
           projectsError.innerHTML = `
             <p>${error.message}</p>
             <button type="button" id="retry-fetch" class="retry-btn">Retry</button>
