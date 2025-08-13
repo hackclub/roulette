@@ -4,7 +4,6 @@ import LinkButton from "../../components/LinkButton.astro";
 import InlineArrow from "../../components/InlineArrow.astro";
 import { requireUser, redirectToLogin } from '../../lib/auth.js';
 import { getCurrentRound } from '../../lib/data.js';
-import { getProjectsSinceRoundNum } from '../../lib/hackatime.js';
 import { getUserRound, getUserBySlackId } from '../../lib/airtable.js';
 
 export const prerender = false;
@@ -12,7 +11,6 @@ export const prerender = false;
 // Get user data
 let userData;
 let currentRound;
-let hackatimeProjects = [];
 let wagerData = null;
 
 try {
@@ -20,15 +18,6 @@ try {
   currentRound = getCurrentRound();
   const slackId = userData.fields.slackId;
   
-  // Fetch hackatime projects for this user
-  try {
-    if (slackId) {
-      hackatimeProjects = await getProjectsSinceRoundNum(slackId, currentRound);
-    }
-  } catch (error) {
-    console.error('Failed to fetch hackatime projects:', error);
-  }
-
   // Fetch wager data directly from Airtable instead of API call
   try {
     if (slackId) {
@@ -112,16 +101,15 @@ const targetHours = wagerData?.targetHours || 0;
           <div class="hackatime-container">
             <input type="text" id="project-search" class="styled-input search-input" placeholder="search projects...">
             <div class="projects-list">
-              {hackatimeProjects.length > 0 ? (
-                hackatimeProjects.map((project, index) => (
-                  <div class="project-item">
-                    <input type="checkbox" id={`project-${index}`} name="hackatime-projects" value={project.name || project.id || `project-${index}`}>
-                    <label for={`project-${index}`}>{project.name || `Project ${index + 1}`} ({project.text})</label>
-                  </div>
-                ))
-              ) : (
-                <p class="no-projects">No projects found for this round</p>
-              )}
+              <div id="projects-loading" class="projects-loading">
+                <p>Loading hackatime projects...</p>
+              </div>
+              <div id="projects-content" class="projects-content" style="display: none;">
+                <!-- Projects will be populated here -->
+              </div>
+              <div id="projects-error" class="projects-error" style="display: none;">
+                <p>Failed to load projects. Please refresh the page.</p>
+              </div>
             </div>
           </div>
         </div>
@@ -208,13 +196,112 @@ const targetHours = wagerData?.targetHours || 0;
   </main>
 </Layout>
 
-<script define:vars={{ hackatimeProjects, wagerData }}>
+<script define:vars={{ wagerData }}>
   document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('project-search');
-    const projectItems = document.querySelectorAll('.project-item');
+    const projectsLoading = document.getElementById('projects-loading');
+    const projectsContent = document.getElementById('projects-content');
+    const projectsError = document.getElementById('projects-error');
+    
+    let hackatimeProjects = []; // Store projects data for calculations
 
+    // Function to fetch and display projects
+    async function fetchProjects() {
+      projectsLoading.style.display = 'block';
+      projectsContent.style.display = 'none';
+      projectsError.style.display = 'none';
+
+      try {
+        const response = await fetch('/api/hackatime-projects', {
+          credentials: 'include', // This ensures cookies are sent with the request
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          // Handle different error status codes
+          if (response.status === 429) {
+            throw new Error('Rate limit exceeded. Please wait a minute and try again.');
+          } else if (response.status === 401) {
+            throw new Error('Authentication required. Please refresh the page and try again.');
+          } else if (response.status === 400) {
+            throw new Error('Invalid request. Please refresh the page and try again.');
+          } else {
+            throw new Error(`Server error (${response.status}). Please try again later.`);
+          }
+        }
+        
+        const data = await response.json();
+
+        // Ensure we have a valid response
+        if (!data || typeof data !== 'object') {
+          throw new Error('Invalid API response format');
+        }
+
+        if (data.projects && Array.isArray(data.projects) && data.projects.length > 0) {
+          hackatimeProjects = data.projects; // Store projects data
+          projectsContent.innerHTML = ''; // Clear previous content
+          data.projects.forEach((project, index) => {
+            const projectItem = document.createElement('div');
+            projectItem.className = 'project-item';
+            
+            // Create elements safely without innerHTML
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = `project-${index}`;
+            checkbox.name = 'hackatime-projects';
+            checkbox.value = project.name || project.id || `project-${index}`;
+            checkbox.dataset.hours = project.hours || 0;
+            checkbox.dataset.minutes = project.minutes || 0;
+            
+            const label = document.createElement('label');
+            label.htmlFor = `project-${index}`;
+            label.textContent = `${project.name || `Project ${index + 1}`} (${project.text || 'No description'})`;
+            
+            projectItem.appendChild(checkbox);
+            projectItem.appendChild(label);
+            projectsContent.appendChild(projectItem);
+          });
+          projectsContent.style.display = 'block';
+          
+          // Add event listeners to new checkboxes
+          addProjectCheckboxListeners();
+        } else {
+          projectsContent.innerHTML = '<p class="no-projects">No projects found for this round</p>';
+          projectsContent.style.display = 'block';
+        }
+      } catch (error) {
+        console.error('Failed to fetch hackatime projects:', error);
+        
+        // Show specific error message
+        if (error.message.includes('Rate limit exceeded')) {
+          projectsError.innerHTML = `
+            <p>${error.message}</p>
+            <button type="button" id="retry-fetch" class="retry-btn">Retry</button>
+          `;
+          
+          // Add retry functionality
+          const retryBtn = projectsError.querySelector('#retry-fetch');
+          retryBtn.addEventListener('click', () => {
+            fetchProjects();
+          });
+        } else {
+          projectsError.innerHTML = `<p>${error.message}</p>`;
+        }
+        projectsError.style.display = 'block';
+      } finally {
+        projectsLoading.style.display = 'none';
+      }
+    }
+
+    // Initial fetch
+    fetchProjects();
+
+    // Search functionality
     searchInput.addEventListener('input', (e) => {
       const searchTerm = e.target.value.toLowerCase().trim();
+      const projectItems = document.querySelectorAll('.project-item');
       
       projectItems.forEach(item => {
         const label = item.querySelector('label');
@@ -359,17 +446,6 @@ const targetHours = wagerData?.targetHours || 0;
 
     // Update submission summary with wager and reward information
     function updateSubmissionSummary() {
-      console.log('Updating submission summary...'); // Debug log
-      
-      // Debug: Inspect the actual rendered HTML
-      console.log('=== DOM INSPECTION ===');
-      const rewardsBreakdown = document.querySelector('.rewards-breakdown');
-      if (rewardsBreakdown) {
-        console.log('Rewards breakdown HTML:', rewardsBreakdown.innerHTML);
-        console.log('Rewards breakdown outerHTML:', rewardsBreakdown.outerHTML);
-      } else {
-        console.log('Rewards breakdown container not found!');
-      }
       
       // Get wager data from server-side (stored in data attributes)
       const chipsReward = document.querySelector('.chips-reward');
@@ -377,131 +453,58 @@ const targetHours = wagerData?.targetHours || 0;
       const chipsTotalSpan = document.getElementById('chips-total');
       const respinTotalSpan = document.getElementById('respin-total');
       
-      console.log('Elements found:', {
-        chipsReward: chipsReward ? 'FOUND' : 'MISSING',
-        respinReward: respinReward ? 'FOUND' : 'MISSING',
-        chipsTotalSpan: chipsTotalSpan ? 'FOUND' : 'MISSING',
-        respinTotalSpan: respinTotalSpan ? 'FOUND' : 'MISSING'
-      });
+      // Extract wager data from data attributes
+      const wagerChoice = chipsReward.dataset.wagerChoice || '1.5x';
+      const wagerAmount = parseInt(chipsReward.dataset.wagerAmount) || 0;
+      const currentChips = parseInt(chipsReward.dataset.currentChips) || 0;
+      const currentRespins = parseInt(respinReward.dataset.currentRespins) || 0;
       
-      console.log('DOM structure:', {
-        'chips-reward elements': document.querySelectorAll('.chips-reward').length,
-        'respin-reward elements': document.querySelectorAll('.respin-reward').length,
-        'chips-total elements': document.querySelectorAll('#chips-total').length,
-        'respin-total elements': document.querySelectorAll('#respin-total').length
-      });
+      // Get current total hours and target hours
+      const currentHoursText = document.querySelector('.total-amount').textContent;
+      const currentHours = parseFloat(currentHoursText.replace('h', '').replace('min', '')) || 0;
+      const targetHours = parseFloat(document.querySelector('.target-display').textContent.replace('h', '')) || 0;
+      const hoursAboveTarget = Math.max(0, currentHours - targetHours);
+      const expectedRespins = Math.floor(hoursAboveTarget / 3);
       
-      // Debug: Log the actual elements to see what we're getting
-      console.log('Raw elements:', {
-        chipsReward: chipsReward,
-        respinReward: respinReward,
-        chipsTotalSpan: chipsTotalSpan,
-        respinTotalSpan: respinTotalSpan
-      });
-      
-      // Debug: Check if elements exist by class name
-      console.log('All elements with class chips-reward:', document.querySelectorAll('.chips-reward'));
-      console.log('All elements with class respin-reward:', document.querySelectorAll('.respin-reward'));
-      
-      // Debug: Show the data attributes values
-      if (chipsReward) {
-        console.log('Chips reward data attributes:', {
-          wagerChoice: chipsReward.dataset.wagerChoice,
-          wagerAmount: chipsReward.dataset.wagerAmount,
-          currentChips: chipsReward.dataset.currentChips
-        });
-      }
-      
-      if (respinReward) {
-        console.log('Respin reward data attributes:', {
-          currentRespins: respinReward.dataset.currentRespins
-        });
-      }
-      
-      if (chipsReward && respinReward && chipsTotalSpan && respinTotalSpan) {
-        // Extract wager data from data attributes
-        const wagerChoice = chipsReward.dataset.wagerChoice || '1.5x';
-        const wagerAmount = parseInt(chipsReward.dataset.wagerAmount) || 0;
-        const currentChips = parseInt(chipsReward.dataset.currentChips) || 0;
-        const currentRespins = parseInt(respinReward.dataset.currentRespins) || 0;
+      // Calculate expected chips based on hours vs target
+      if (currentHours >= targetHours) {
+        // Calculate expected chips (wager amount × multiplier)
+        const multiplierValues = { '1.5x': 1.5, '2x': 2, '3x': 3 };
+        const multiplier = multiplierValues[wagerChoice] || 1.5;
+        const expectedChips = Math.round(wagerAmount * multiplier);
         
-        console.log('Wager data extracted:', { wagerChoice, wagerAmount, currentChips, currentRespins });
+        // Update the chips-text span instead of the entire chipsReward
+        const chipsText = chipsReward.querySelector('.chips-text');
+        if (chipsText) {
+          chipsText.textContent = `${expectedChips} chips`;
+        }
+        chipsTotalSpan.textContent = currentChips + expectedChips;
+      } else {
+        // Calculate lifeline chips (bring user up to 10 chips minimum)
+        const lifelineChips = Math.max(0, 10 - currentChips);
         
-        // Get current total hours and target hours
-        const currentHoursText = document.querySelector('.total-amount').textContent;
-        const currentHours = parseFloat(currentHoursText.replace('h', '').replace('min', '')) || 0;
-        const targetHours = parseFloat(document.querySelector('.target-display').textContent.replace('h', '')) || 0;
-        const hoursAboveTarget = Math.max(0, currentHours - targetHours);
-        const expectedRespins = Math.floor(hoursAboveTarget / 3);
-        
-        console.log('Hours calculation:', { currentHours, targetHours, hoursAboveTarget, expectedRespins }); // Debug log
-        
-        // Calculate expected chips based on hours vs target
-        if (currentHours >= targetHours) {
-          // Calculate expected chips (wager amount × multiplier)
-          const multiplierValues = { '1.5x': 1.5, '2x': 2, '3x': 3 };
-          const multiplier = multiplierValues[wagerChoice] || 1.5;
-          const expectedChips = Math.round(wagerAmount * multiplier);
-          
-          console.log('Chips calculation (hours >= target):', {
-            wagerAmount,
-            wagerChoice,
-            multiplier,
-            expectedChips,
-            currentChips,
-            totalChips: currentChips + expectedChips
-          });
-          
-          // Update the chips-text span instead of the entire chipsReward
-          const chipsText = chipsReward.querySelector('.chips-text');
-          if (chipsText) {
+        // Update the chips-text span to show lifeline chips
+        const chipsText = chipsReward.querySelector('.chips-text');
+        if (chipsText) {
+          if (targetHours > 0) {
+            chipsText.textContent = `+ ${lifelineChips} lifeline chips`;
+          } else {
+            // If no target hours set, show default chips calculation
+            const multiplierValues = { '1.5x': 1.5, '2x': 2, '3x': 3 };
+            const multiplier = multiplierValues[wagerChoice] || 1.5;
+            const expectedChips = Math.round(wagerAmount * multiplier);
             chipsText.textContent = `${expectedChips} chips`;
           }
-          chipsTotalSpan.textContent = currentChips + expectedChips;
-        } else {
-          // Calculate lifeline chips (bring user up to 10 chips minimum)
-          const lifelineChips = Math.max(0, 10 - currentChips);
-          
-          console.log('Lifeline chips calculation (hours < target):', {
-            currentChips,
-            targetChips: 10,
-            lifelineChips,
-            totalChips: currentChips + lifelineChips
-          });
-          
-          // Update the chips-text span to show lifeline chips
-          const chipsText = chipsReward.querySelector('.chips-text');
-          if (chipsText) {
-            if (targetHours > 0) {
-              chipsText.textContent = `+ ${lifelineChips} lifeline chips`;
-            } else {
-              // If no target hours set, show default chips calculation
-              const multiplierValues = { '1.5x': 1.5, '2x': 2, '3x': 3 };
-              const multiplier = multiplierValues[wagerChoice] || 1.5;
-              const expectedChips = Math.round(wagerAmount * multiplier);
-              chipsText.textContent = `${expectedChips} chips`;
-            }
-          }
-          chipsTotalSpan.textContent = currentChips + lifelineChips;
         }
-        
-        // Update respin tokens
-        const respinText = respinReward.querySelector('.respin-text');
-        if (respinText) {
-          respinText.textContent = `+ ${expectedRespins} respin tokens`;
-        }
-        respinTotalSpan.textContent = currentRespins + expectedRespins;
-        
-        console.log('Updated display elements'); // Debug log
-      } else {
-        console.log('Some elements not found, cannot update display'); // Debug log
-        console.log('Missing elements:', {
-          chipsReward: !chipsReward,
-          respinReward: !respinReward,
-          chipsTotalSpan: !chipsTotalSpan,
-          respinTotalSpan: !respinTotalSpan
-        });
+        chipsTotalSpan.textContent = currentChips + lifelineChips;
       }
+      
+      // Update respin tokens
+      const respinText = respinReward.querySelector('.respin-text');
+      if (respinText) {
+        respinText.textContent = `+ ${expectedRespins} respin tokens`;
+      }
+      respinTotalSpan.textContent = currentRespins + expectedRespins;
     }
 
     // Add event listeners for real-time updates
@@ -991,6 +994,52 @@ const targetHours = wagerData?.targetHours || 0;
     opacity: 0.7;
     font-style: italic;
     padding: 20px;
+  }
+
+  /* Projects loading and error states */
+  .projects-loading,
+  .projects-error {
+    text-align: center;
+    padding: 20px;
+    color: var(--pink);
+  }
+
+  .projects-loading p {
+    margin: 0;
+    opacity: 0.8;
+    font-style: italic;
+  }
+
+  .projects-error p {
+    margin: 0;
+    color: #ff6b6b;
+    font-weight: 600;
+  }
+
+  .retry-btn {
+    background: var(--pink);
+    color: #000;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    margin-top: 12px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+  }
+
+  .retry-btn:hover {
+    background: #ff8aa3;
+    transform: translateY(-1px);
+  }
+
+  .retry-btn:active {
+    transform: translateY(0);
+  }
+
+  .projects-content {
+    /* Content will be populated dynamically */
   }
 
   /* Theme justification container */

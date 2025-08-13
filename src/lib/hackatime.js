@@ -5,7 +5,20 @@ const roundStartDates = {
   3: "2025-08-21",
   4: "2025-08-28",
 }
+
+// Ensure we have a fetch function available
+const fetchFunction = globalThis.fetch || fetch;
+
 export async function getProjectsSinceRoundNum(slackId, roundNum) {
+  // Input validation
+  if (!slackId || typeof slackId !== 'string' || slackId.trim() === '') {
+    throw new Error('Invalid slackId: must be a non-empty string');
+  }
+  
+  if (!roundNum || typeof roundNum !== 'number' || roundNum < 1 || roundNum > 4) {
+    throw new Error('Invalid roundNum: must be a number between 1 and 4');
+  }
+  
   const roundStartDate = roundStartDates[roundNum];
 
   if (!roundStartDate) {
@@ -15,9 +28,9 @@ export async function getProjectsSinceRoundNum(slackId, roundNum) {
   try {
     // Fetch Hackatime data directly from their API
     const hackatimeUrl = `https://hackatime.hackclub.com/api/v1/users/${slackId}/stats?features=projects&start_date=${roundStartDate}`;
-    console.log(`[DEBUG] Fetching Hackatime data for slackId: ${slackId}`);
     
-    const hackatimeResponse = await fetch(hackatimeUrl, {
+    // Use the available fetch function
+    const hackatimeResponse = await fetchFunction(hackatimeUrl, {
       headers: { Accept: "application/json" },
     });
 
@@ -38,11 +51,6 @@ export async function getProjectsSinceRoundNum(slackId, roundNum) {
       );
       return [];
     }
-
-    console.log(
-      "[DEBUG] Hackatime data projects:",
-      JSON.stringify(hackatimeData.data.projects, null, 2),
-    );
 
     // Return the projects data
     return hackatimeData.data.projects || [];
