@@ -1,7 +1,6 @@
 
 export function getCurrentRound(){
-  // For now, return round 1, but this could be made dynamic based on current date
-  return 1;
+  return 2;
 }
 
 
