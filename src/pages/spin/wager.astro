@@ -46,32 +46,32 @@ var user = userData.fields;
       margin: 0 auto;
       padding: 20px;
       font-size: 0.7em;">
-  <input type="range" id="chips" name="chips" min="0" max="10" class="slider"/>
+  <input type="range" id="chips" name="chips" min="0" max={user.chips || 0} class="slider"/>
   </div>
-  <p>wager: <span class="wager-count">5</span> chips (you currently have 10). move the slider to change wager amount.</p>
+  <p>wager: <span class="wager-count">0</span> chips (you currently have {user.chips || 0}). move the slider to change wager amount.</p>
 </div>
 <div class="choices">
 
 <div class="cardchoice" id="card15" onclick="selectCard('15')">
 <GambleCard hours=5 mult=1.5 fullHeight>
-<span class="wager-count">5</span><InlineArrow/><span class="wager-pt5x">7.5</span> chips
+<span class="wager-count">0</span><InlineArrow/><span class="wager-pt5x">0</span> chips
 </GambleCard>
 </div>
 
 <div class="cardchoice" id='card2' onclick="selectCard('2')">
 <GambleCard hours=10 mult=2 fullHeight>
-<span class="wager-count">5</span><InlineArrow/><span class="wager-twox">10</span> chips
+<span class="wager-count">0</span><InlineArrow/><span class="wager-twox">0</span> chips
 </GambleCard>
 </div>
 <div class="cardchoice" id='card3' onclick="selectCard('3')">
 <GambleCard hours=25 mult=3 fullHeight>
-<span class="wager-count">5</span><InlineArrow/><span class="wager-threex">15</span> chips
+<span class="wager-count">0</span><InlineArrow/><span class="wager-threex">0</span> chips
 </GambleCard>
 </div>
 </div>
 
 <div class="confirm-box">
-<p>wager <span class="wager-count">5</span> chips. if you win, you'll have <span class="final-count">?</span> total. if you lose, you'll have <span class="lose-count">5</span> total.</p>
+<p>wager <span class="wager-count">0</span> chips. if you win, you'll have <span class="final-count">?</span> total. if you lose, you'll have <span class="lose-count">?</span> total.</p>
 
 
 <p style="text-align: center;">
@@ -180,13 +180,64 @@ main {
 
 <script client:load>
 
-var selectedMult = "0"
-var wageredChips = 5;
-var resultChips = "?"
-var pt5x = 7.5;
-var twox = 10;
-var threex = 15;
+var slider = document.getElementById("chips");
 
+// Set initial slider value to 0
+slider.value = 0;
+
+var outputs = document.getElementsByClassName('wager-count');
+
+var output_pt5x = document.getElementsByClassName('wager-pt5x')
+
+var output_twox = document.getElementsByClassName('wager-twox')
+
+var output_threex = document.getElementsByClassName('wager-threex')
+
+// Initialize variables
+var wageredChips = 0;
+var pt5x = 0;
+var twox = 0;
+var threex = 0;
+var selectedMult = null;
+var resultChips = 0;
+
+for (var i = 0; i < outputs.length; i++) {
+  outputs[i].textContent = slider.value;
+}
+
+// Initialize the display
+updateCounts();
+
+
+slider.oninput = function() {
+  pt5x = slider.value * 1.5;
+  twox = slider.value * 2;
+  threex = slider.value * 3;
+
+
+
+  for (var i = 0; i < outputs.length; i++) {
+    outputs[i].textContent = slider.value;
+
+  }
+
+  for (var i = 0; i < output_pt5x.length; i++) {
+    output_pt5x[i].textContent = pt5x;
+  }
+
+  for (var i = 0; i < output_twox.length; i++) {
+    output_twox[i].textContent = twox;
+  }
+
+  for (var i = 0; i < output_threex.length; i++) {
+    output_threex[i].textContent = threex;
+  }
+
+  wageredChips = Number(slider.value);
+
+  updateCounts()
+
+}
 
 
 function selectCard(cardNum){
@@ -217,15 +268,16 @@ function selectCard(cardNum){
 
 
 function updateCounts(){
+  const maxChips = Number(document.getElementById('chips').max);
   console.log(wageredChips)
   if (selectedMult == "15") {
-    resultChips = pt5x + (10 - wageredChips);
+    resultChips = pt5x + (maxChips - wageredChips);
   } else if (selectedMult == "2") {
-    resultChips = twox + (10 - wageredChips);
+    resultChips = twox + (maxChips - wageredChips);
   } else if (selectedMult == "3") {
-    resultChips = threex + (10 - wageredChips);
+    resultChips = threex + (maxChips - wageredChips);
   }
-  console.log("selected", selectedMult, resultChips, 10 - wageredChips);
+  console.log("selected", selectedMult, resultChips, maxChips - wageredChips);
 
   const finalCount = document.getElementsByClassName('final-count');
 
@@ -236,12 +288,29 @@ function updateCounts(){
   var loseCount = document.getElementsByClassName('lose-count');
 
   for (var i = 0; i < loseCount.length; i++) {
-    loseCount[i].textContent = 10 - wageredChips;
+    loseCount[i].textContent = maxChips - wageredChips;
   }
 
 }
 
 function confirmWager(){
+  const maxChips = Number(document.getElementById('chips').max);
+  
+  if (!selectedMult) {
+    alert('Please select a multiplier (1.5x, 2x, or 3x) before confirming your wager.');
+    return;
+  }
+  
+  if (wageredChips <= 0) {
+    alert('Please select a wager amount greater than 0 chips.');
+    return;
+  }
+  
+  if (wageredChips > maxChips) {
+    alert(`You can't wager more chips than you have. You have ${maxChips} chips.`);
+    return;
+  }
+  
   const mults = {
     "15": "1.5x",
     "2": "2x",
@@ -271,53 +340,6 @@ async function chooseWager(choice, amount) {
   } else {
     alert('Wager failed: ' + (data.error || 'Unknown error'));
   }
-
-}
-
-
-
-var slider = document.getElementById("chips");
-
-var outputs = document.getElementsByClassName('wager-count');
-
-var output_pt5x = document.getElementsByClassName('wager-pt5x')
-
-var output_twox = document.getElementsByClassName('wager-twox')
-
-var output_threex = document.getElementsByClassName('wager-threex')
-
-for (var i = 0; i < outputs.length; i++) {
-  outputs[i].textContent = slider.value;
-}
-
-
-slider.oninput = function() {
-  pt5x = slider.value * 1.5;
-  twox = slider.value * 2;
-  threex = slider.value * 3;
-
-
-
-  for (var i = 0; i < outputs.length; i++) {
-    outputs[i].textContent = slider.value;
-
-  }
-
-  for (var i = 0; i < output_pt5x.length; i++) {
-    output_pt5x[i].textContent = pt5x;
-  }
-
-  for (var i = 0; i < output_twox.length; i++) {
-    output_twox[i].textContent = twox;
-  }
-
-  for (var i = 0; i < output_threex.length; i++) {
-    output_threex[i].textContent = threex;
-  }
-
-  wageredChips = Number(slider.value);
-
-  updateCounts()
 
 }
 
