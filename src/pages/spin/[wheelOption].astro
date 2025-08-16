@@ -5,7 +5,8 @@ import LinkButton from "../../components/LinkButton.astro";
 import InlineArrow from "../../components/InlineArrow.astro";
 
 import { requireUser, redirectToLogin } from '../../lib/auth.js';
-
+import { getUserRound } from '../../lib/airtable.js';
+import { getCurrentRound } from '../../lib/data.js';
 
 import { choices } from '../../lib/data.js';
 
@@ -21,9 +22,22 @@ try {
 }
 
 // user context available if needed
-
-
 const { wheelOption } = Astro.params;
+
+// Check if user has already spun for this wheel option in the current round
+const currentRound = getCurrentRound();
+const userRound = await getUserRound(userData.fields.slackId, currentRound);
+
+if (userRound && userRound.fields && userRound.fields[`spin${wheelOption.charAt(0).toUpperCase() + wheelOption.slice(1)}`]) {
+  // User has already spun for this wheel option, redirect to spin dashboard
+  return Astro.redirect('/spin');
+}
+
+// Check if user has wagered for this round before spinning
+if (!userRound || !userRound.fields || !userRound.fields.wagerChoice) {
+  // User hasn't wagered yet, redirect to wager page
+  return Astro.redirect('/spin/wager');
+}
 
 const wheelOptions = choices[wheelOption];
 

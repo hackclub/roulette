@@ -5,7 +5,8 @@ import InlineArrow from '../../components/InlineArrow.astro';
 import GambleCard from '../../components/GambleCard.astro';
 
 import { requireUser, redirectToLogin } from '../../lib/auth.js';
-import { userWager } from '../../lib/airtable.js';
+import { userWager, getUserRound } from '../../lib/airtable.js';
+import { getCurrentRound } from '../../lib/data.js';
 
 let userData;
 
@@ -20,7 +21,20 @@ try {
 
 var user = userData.fields;
 
-// if user wagered already for this round - redirect to dashboard
+// Check if user has already wagered for this round - redirect to dashboard
+const currentRound = getCurrentRound();
+const userRound = await getUserRound(user.slackId, currentRound);
+
+if (userRound && userRound.fields && userRound.fields.wagerChoice) {
+  // User has already wagered for this round, redirect to spin dashboard
+  return Astro.redirect('/spin');
+}
+
+// Check if user has chips to wager
+if (!user.chips || user.chips <= 0) {
+  // User has no chips to wager, redirect to spin dashboard
+  return Astro.redirect('/spin');
+}
 
 ---
 
