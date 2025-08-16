@@ -38,6 +38,18 @@ const hasDetailsSubmitted = Boolean(
 
 const roundNumber = getCurrentRound();
 const round = await getUserRound(user.slackId, roundNumber);
+
+// Helper function to get round end date
+function getRoundEndDate(roundNum) {
+  const roundEndDates = {
+    1: "friday, 15 august, 9am PST",
+    2: "friday, 22 august, 9am PST", 
+    3: "friday, 29 august, 9am PST",
+    4: "friday, 12 september, 9am PST"
+  };
+  return roundEndDates[roundNum] || "friday, 9am PST";
+}
+
 const fields = round?.fields || {};
 const pickedCamera = fields.spinCamera || '—';
 const pickedGameplay = fields.spinGameplay || '—';
@@ -206,7 +218,7 @@ if (!hasCamera && (wagerChoice !== '—')) {
             
           </section>
 
-          <p>round {roundNumber} ends on friday, 22 august, 9am PST.</p>
+          <p>round {roundNumber} ends on {getRoundEndDate(roundNumber)}</p>
           {hasCamera && hasGameplay && hasSetting ? (
             <section class="submit" style="padding-top: 40px;">
               {hasDetailsSubmitted ? (

@@ -51,9 +51,6 @@ export async function createOrUpdateUser({ slackId, name, avatar, email}) {
   }
 }
 
-const currentRound = 1;
-
-
 export async function isWageredForCurrentRound({ userId }) {
   const currentRound = getCurrentRound();
   const userRound = await getUserRound(userId, currentRound);
