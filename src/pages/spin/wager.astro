@@ -30,11 +30,8 @@ if (userRound && userRound.fields && userRound.fields.wagerChoice) {
   return Astro.redirect('/spin');
 }
 
-// Check if user has chips to wager
-if (!user.chips || user.chips <= 0) {
-  // User has no chips to wager, redirect to spin dashboard
-  return Astro.redirect('/spin');
-}
+// Users can always access the wager page, even with 0 chips
+// They can wager 0 chips if they have no chips to wager
 
 ---
 
@@ -50,7 +47,7 @@ if (!user.chips || user.chips <= 0) {
 <h1>wager</h1>
 
 <p>bet against yourself: how many hours can you hit this week?</p>
-<p>if you miss the hours, you will lose all the chips that you wager.</p>
+<p>if you miss the hours, you will lose all the chips that you wager. you can also wager 0 chips if you want to participate without risking chips.</p>
 </div>
 
 
@@ -315,8 +312,8 @@ function confirmWager(){
     return;
   }
   
-  if (wageredChips <= 0) {
-    alert('Please select a wager amount greater than 0 chips.');
+  if (wageredChips < 0) {
+    alert('Please select a valid wager amount (0 or more chips).');
     return;
   }
   

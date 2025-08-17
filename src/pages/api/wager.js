@@ -110,7 +110,7 @@ export async function POST({ request }) {
     });
   }
 
-  const amt = validateNumber(wagerAmount, 1, 10000);
+  const amt = validateNumber(wagerAmount, 0, 10000);
   if (amt === null) {
     return new Response(JSON.stringify({ error: 'Invalid wager amount' }), { 
       status: 400,
@@ -120,7 +120,11 @@ export async function POST({ request }) {
 
   const isWageredAlready = await isWageredForCurrentRound({ "userId": payload.userId })
 
-  const hasEnough = await hasEnoughChips(payload.userId, amt)
+  // Only check if user has enough chips if they're actually wagering chips
+  let hasEnough = true;
+  if (amt > 0) {
+    hasEnough = await hasEnoughChips(payload.userId, amt);
+  }
 
   if (isWageredAlready) {
     return new Response(JSON.stringify({ error: 'Wagered already' }), { 
@@ -138,8 +142,10 @@ export async function POST({ request }) {
       'wagerChoice': wagerChoice,
       'wagerAmount': amt
     })
-    // Deduct chips immediately on wagering
-    await decrementUserChips(payload.userId, amt);
+    // Only deduct chips if they actually wagered chips
+    if (amt > 0) {
+      await decrementUserChips(payload.userId, amt);
+    }
   }
 
   return new Response(JSON.stringify({ success: true }), { 

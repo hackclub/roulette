@@ -185,9 +185,9 @@ export async function POST({ request }) {
         // Calculate total hours from submission
         const totalHoursNum = parseFloat(totalHours.replace('h', '').replace('min', '')) || 0;
         
-        // Calculate expected chips (only if hours meet target)
+        // Calculate expected chips (only if hours meet target AND they actually wagered chips)
         let chipsToAward = 0;
-        if (totalHoursNum >= targetHours) {
+        if (totalHoursNum >= targetHours && wagerAmount > 0) {
           const multiplierValues = { '1.5x': 1.5, '2x': 2, '3x': 3 };
           const multiplier = multiplierValues[wagerChoice] || 1.5;
           chipsToAward = Math.round(wagerAmount * multiplier);
@@ -197,14 +197,16 @@ export async function POST({ request }) {
         const hoursAboveTarget = Math.max(0, totalHoursNum - targetHours);
         const respinTokensToAward = Math.floor(hoursAboveTarget / 3);
         
-        // Calculate lifeline chips (bring user up to 10 chips minimum if they didn't hit target)
+        // Calculate lifeline chips (bring user up to 10 chips minimum)
+        // This applies when they don't meet target hours OR when they wagered 0 chips
         let lifelineChips = 0;
-        if (totalHoursNum < targetHours) {
+        if (totalHoursNum < targetHours || wagerAmount === 0) {
           const currentChips = Number(user.chips || 0);
           lifelineChips = Math.max(0, 10 - currentChips);
         }
         
         // Update user's chips and respin tokens in database
+        // Note: Users always get lifeline chips if they submit a game, ensuring they have at least 10 chips
         const totalChipsToAward = chipsToAward + lifelineChips;
         if (totalChipsToAward > 0 || respinTokensToAward > 0) {
           const currentChips = Number(user.chips || 0);

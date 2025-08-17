@@ -56,7 +56,8 @@ export async function isWageredForCurrentRound({ userId }) {
   const userRound = await getUserRound(userId, currentRound);
   if (!userRound) return false;
   const f = userRound.fields || {};
-  return Boolean(f.wagerChoice && f.wagerAmount);
+  // Check if wagerChoice exists and wagerAmount is defined (including 0)
+  return Boolean(f.wagerChoice && f.wagerAmount !== undefined);
 }
 
 // this assumes that it has already checked that the wager is not yet done for the current round

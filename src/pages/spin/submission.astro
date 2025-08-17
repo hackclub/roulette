@@ -487,8 +487,8 @@ const targetHours = wagerData?.targetHours || 0;
       const expectedRespins = Math.floor(hoursAboveTarget / 3);
       
       // Calculate expected chips based on hours vs target
-      if (currentHours >= targetHours) {
-        // Calculate expected chips (wager amount × multiplier)
+      if (currentHours >= targetHours && wagerAmount > 0) {
+        // Calculate expected chips (wager amount × multiplier) only if they actually wagered chips
         const multiplierValues = { '1.5x': 1.5, '2x': 2, '3x': 3 };
         const multiplier = multiplierValues[wagerChoice] || 1.5;
         const expectedChips = Math.round(wagerAmount * multiplier);
@@ -501,12 +501,17 @@ const targetHours = wagerData?.targetHours || 0;
         chipsTotalSpan.textContent = currentChips + expectedChips;
       } else {
         // Calculate lifeline chips (bring user up to 10 chips minimum)
+        // This applies when they don't meet target hours OR when they wagered 0 chips
         const lifelineChips = Math.max(0, 10 - currentChips);
         
         // Update the chips-text span to show lifeline chips
         const chipsText = chipsReward.querySelector('.chips-text');
         if (chipsText) {
-          if (targetHours > 0) {
+          if (wagerAmount === 0) {
+            // If they wagered 0 chips, they get lifeline chips regardless of hours
+            chipsText.textContent = `+ ${lifelineChips} lifeline chips`;
+          } else if (targetHours > 0) {
+            // If they have target hours but didn't meet them, show lifeline chips
             chipsText.textContent = `+ ${lifelineChips} lifeline chips`;
           } else {
             // If no target hours set, show default chips calculation
