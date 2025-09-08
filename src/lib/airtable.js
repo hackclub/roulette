@@ -203,6 +203,69 @@ export async function updateUserDetails(slackId, formData) {
   return { success: true };
 }
 
+// Purchase management functions
+export async function createPurchase(slackId, itemName, itemType, chipsSpent) {
+  const user = await getUserBySlackId(slackId);
+  if (!user) throw new Error('user not found');
+  
+  // Check if user has enough chips
+  const currentChips = Number(user.fields.chips || 0);
+  if (currentChips < chipsSpent) {
+    throw new Error('Insufficient chips');
+  }
+  
+  // Create purchase record
+  const purchase = await base('Purchases').create({
+    'purchaseId': `${slackId}_${Date.now()}`, // Unique purchase ID
+    'user': [user.id], // Link to Users table
+    'itemName': itemName,
+    'itemType': itemType,
+    'chipsSpent': chipsSpent
+  });
+  
+  // Deduct chips from user
+  await base('Users').update(user.id, {
+    chips: currentChips - chipsSpent
+  });
+  
+  return purchase;
+}
+
+export async function getUserPurchases(slackId) {
+  const user = await getUserBySlackId(slackId);
+  if (!user) return [];
+  
+  const records = await base('Purchases')
+    .select({
+      filterByFormula: `{user} = "${user.id}"`,
+      sort: [{ field: 'purchaseId', direction: 'desc' }]
+    })
+    .all();
+    
+  return records.map(record => ({
+    id: record.id,
+    purchaseId: record.fields.purchaseId,
+    itemName: record.fields.itemName,
+    itemType: record.fields.itemType,
+    chipsSpent: record.fields.chipsSpent
+  }));
+}
+
+// Get available stickers from StickerCollection table
+export async function getAvailableStickers() {
+  const records = await base('StickerCollection')
+    .select({
+      sort: [{ field: 'Sticker Name', direction: 'asc' }]
+    })
+    .all();
+    
+  return records.map(record => ({
+    id: record.id,
+    stickerName: record.fields['Sticker Name'],
+    stickerImage: record.fields['URL']
+  }));
+}
+
 export async function submitProjectToAirtable(projectData) {
   const description = projectData.gameName + " - " + projectData.gameDescription;
   

@@ -1,0 +1,542 @@
+---
+import InsideLayout from '../layouts/InsideLayout.astro';
+import { requireUser, redirectToLogin } from '../lib/auth.js';
+
+let userData;
+
+export const prerender = false;
+
+try {
+  userData = await requireUser(Astro.request.headers);
+} catch {
+  return redirectToLogin();
+}
+
+var user = userData.fields;
+---
+
+<InsideLayout currentPage="sticker-spin">
+<main>
+  <h1>🎲 spin for a sticker</h1>
+  <p>test your luck and get a random sticker!</p>
+  
+  <div class="user-balance">
+    <p>you have <strong>{user.chips}</strong> chips available</p>
+    <p class="cost">cost: <strong>2 chips</strong></p>
+  </div>
+  
+  <div class="spin-container">
+    <div class="wheel-wrapper">
+      <div id="sticker-wheel" class="sticker-wheel">
+        <div class="wheel-center">
+          <div class="wheel-pointer">🎯</div>
+        </div>
+        <div id="wheel-sections" class="wheel-sections"></div>
+      </div>
+      <div class="wheel-indicator">
+        <div class="indicator-triangle"></div>
+      </div>
+    </div>
+    
+    <div class="spin-controls">
+      <button id="spin-button" class="spin-button" disabled>
+        <span class="button-text">spinning...</span>
+      </button>
+    </div>
+  </div>
+  
+  <div id="result-container" class="result-container hidden">
+    <h2>🎉 you got:</h2>
+    <div class="sticker-result">
+      <img id="result-sticker" src="" alt="Your sticker" />
+      <h3 id="result-name"></h3>
+    </div>
+    <div class="result-actions">
+      <button id="spin-again-button" class="action-button">spin again</button>
+      <a href="/inventory" class="action-button">view collection</a>
+    </div>
+  </div>
+  
+  <div class="back-link">
+    <a href="/cash-in">← back to cash-in</a>
+  </div>
+</main>
+</InsideLayout>
+
+<style is:global>
+  main {
+    padding: 40px;
+    max-width: 800px;
+    margin: 0 auto;
+    height: 100%;
+    box-sizing: border-box;
+    overflow-y: auto;
+    text-align: center;
+  }
+  
+  h1 {
+    color: var(--pink);
+    margin-bottom: 16px;
+    font-size: 2.5em;
+  }
+  
+  main > p {
+    color: var(--pink);
+    margin-bottom: 40px;
+    font-size: 1.2em;
+    opacity: 0.9;
+  }
+  
+  .user-balance {
+    background: rgba(255, 105, 138, 0.1);
+    border: 1px solid var(--pink);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 40px;
+    display: inline-block;
+  }
+  
+  .user-balance p {
+    margin: 0;
+    color: var(--pink);
+    font-size: 1.2em;
+  }
+  
+  .user-balance .cost {
+    margin-top: 8px;
+    opacity: 0.8;
+  }
+  
+  .user-balance strong {
+    color: var(--pink);
+    font-size: 1.4em;
+  }
+  
+  .spin-container {
+    margin-bottom: 40px;
+  }
+  
+  .wheel-wrapper {
+    position: relative;
+    display: inline-block;
+    margin: 0 auto 30px;
+  }
+  
+  .sticker-wheel {
+    width: 300px;
+    height: 300px;
+    border: 4px solid var(--pink);
+    border-radius: 50%;
+    position: relative;
+    transition: transform 3s cubic-bezier(0.25, 0.1, 0.25, 1);
+    overflow: hidden;
+  }
+  
+  .wheel-indicator {
+    position: absolute;
+    top: 50%;
+    right: -20px;
+    transform: translateY(-50%);
+    z-index: 10;
+  }
+  
+  .indicator-triangle {
+    width: 0;
+    height: 0;
+    border-right: 20px solid var(--pink);
+    border-top: 15px solid transparent;
+    border-bottom: 15px solid transparent;
+    filter: drop-shadow(0 0 8px rgba(255, 105, 138, 0.6));
+  }
+  
+  .wheel-sections {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+  }
+  
+  .wheel-section {
+    position: absolute;
+    width: 50%;
+    height: 50%;
+    transform-origin: 100% 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background-color: rgba(255, 105, 138, 0.1);
+    border: 1px solid rgba(255, 105, 138, 0.3);
+    transition: background-color 0.5s ease;
+  }
+  
+  .wheel-section.winning-segment {
+    background-color: var(--pink);
+  }
+  
+  .wheel-section img {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 2px solid white;
+    transition: border-color 0.5s ease;
+  }
+  
+  .wheel-section.winning-segment img {
+    border-color: #000000;
+  }
+  
+  .wheel-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60px;
+    height: 60px;
+    background: var(--pink);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+  }
+  
+  .wheel-pointer {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 20px;
+  }
+  
+  .spin-button {
+    background: var(--pink);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 16px 32px;
+    font-size: 1.2em;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 16px;
+  }
+  
+  .spin-button:hover:not(:disabled) {
+    background: #ff5580;
+    transform: translateY(-2px);
+  }
+  
+  .spin-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  
+
+  
+  .result-container {
+    background: rgba(0, 0, 0, 0.6);
+    border: 2px solid var(--pink);
+    border-radius: 16px;
+    padding: 30px;
+    margin-bottom: 40px;
+  }
+  
+  .result-container.hidden {
+    display: none;
+  }
+  
+  .result-container h2 {
+    color: var(--pink);
+    margin-bottom: 20px;
+    font-size: 1.8em;
+  }
+  
+  .sticker-result {
+    margin-bottom: 30px;
+  }
+  
+  .sticker-result img {
+    width: 200px;
+    object-fit: contain;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 15px rgba(255, 105, 138, 0.3);
+  }
+  
+  .sticker-result h3 {
+    color: var(--pink);
+    margin: 0;
+    font-size: 1.2em;
+    font-weight: 600;
+  }
+  
+  .result-actions {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .action-button {
+    background: rgba(255, 105, 138, 0.2);
+    color: var(--pink);
+    border: 2px solid var(--pink);
+    border-radius: 8px;
+    padding: 12px 24px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.2s ease;
+  }
+  
+  .action-button:hover {
+    background: var(--pink);
+    color: white;
+  }
+  
+  .back-link {
+    margin-top: 40px;
+  }
+  
+  .back-link a {
+    color: var(--pink);
+    text-decoration: none;
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+  }
+  
+  .back-link a:hover {
+    opacity: 1;
+  }
+  
+  @media (max-width: 768px) {
+    main {
+      padding: 20px;
+    }
+    
+    .sticker-wheel {
+      width: 250px;
+      height: 250px;
+    }
+    
+    .wheel-indicator {
+      right: -15px;
+    }
+    
+    .indicator-triangle {
+      border-right: 15px solid var(--pink);
+      border-top: 12px solid transparent;
+      border-bottom: 12px solid transparent;
+    }
+    
+    .sticker-result img {
+      width: 80px;
+      height: 80px;
+    }
+    
+    .sticker-result h3 {
+      font-size: 1.1em;
+    }
+    
+    h1 {
+      font-size: 2em;
+    }
+    
+    .result-actions {
+      flex-direction: column;
+      align-items: center;
+    }
+  }
+</style>
+
+<script>
+  let availableStickers = [];
+  let isSpinning = false;
+  
+  document.addEventListener('DOMContentLoaded', function() {
+    const spinButton = document.getElementById('spin-button');
+    const resultContainer = document.getElementById('result-container');
+    const resultSticker = document.getElementById('result-sticker');
+    const resultName = document.getElementById('result-name');
+    const spinAgainButton = document.getElementById('spin-again-button');
+    
+    // Load available stickers first
+    loadAvailableStickers();
+    
+    spinButton.addEventListener('click', handleSpin);
+    spinAgainButton.addEventListener('click', handleSpinAgain);
+    
+    function updateButtonState() {
+      const userChips = parseInt(document.querySelector('.user-balance strong').textContent);
+      if (userChips >= 2 && !isSpinning) {
+        spinButton.disabled = false;
+        spinButton.querySelector('.button-text').textContent = 'spin for sticker!';
+      } else if (isSpinning) {
+        spinButton.disabled = true;
+        spinButton.querySelector('.button-text').textContent = 'spinning...';
+      } else {
+        spinButton.disabled = true;
+        spinButton.querySelector('.button-text').textContent = 'not enough chips';
+      }
+    }
+    
+    async function handleSpin() {
+      if (isSpinning) return;
+      
+      isSpinning = true;
+      updateButtonState();
+      
+      // Animate the wheel
+      const wheel = document.getElementById('sticker-wheel');
+      
+      // First make API call to get the selected sticker
+      try {
+        const response = await fetch('/api/purchase', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            itemName: 'spin for a sticker',
+            itemType: 'sticker',
+            chipsSpent: 2
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          // Create wheel sections WITHOUT highlighting first
+          createWheelSections();
+          
+          // Copy the exact approach from the main spin page
+          const selectedSticker = availableStickers.find(sticker => sticker.name === data.purchase.itemName);
+          const selectedIndex = availableStickers.findIndex(sticker => sticker.name === data.purchase.itemName);
+          
+          const count = availableStickers.length;
+          const segmentAngle = 360 / count;
+          
+          // The wheel starts with an initial rotation of neg_deg
+          // Calculate where the center of the winning segment is relative to the initial position
+          const winningSegmentCenterAngle = (selectedIndex * segmentAngle) + (segmentAngle / 2);
+          
+          // Arrow is at 0 degrees (3 o'clock). We want the winning segment center to align there.
+          // Since the wheel starts rotated by neg_deg, and segments start from -90 degrees,
+          // we need to calculate the total rotation needed
+          const targetAngle = 90; // 90 degrees to get from top to right (arrow position)
+          const rotationToAlign = targetAngle - winningSegmentCenterAngle;
+          
+          // Add multiple full rotations for dramatic effect
+          const fullSpins = 360 * 4;
+          const finalRotation = fullSpins + rotationToAlign + 120;
+          
+          console.log('Selected sticker:', data.purchase.itemName);
+          console.log('Selected index:', selectedIndex);
+          console.log('Segment angle:', segmentAngle);
+          console.log('Winning segment center angle:', winningSegmentCenterAngle);
+          console.log('Target angle:', targetAngle);
+          console.log('Rotation to align:', rotationToAlign);
+          console.log('Final rotation:', finalRotation);
+          
+          wheel.style.transform = `rotate(${finalRotation}deg)`;
+          
+          // Wait for animation to complete
+          setTimeout(() => {
+            // NOW add the winning highlight after the wheel stops
+            createWheelSections(data.purchase.itemName);
+            
+            // Hide the spin button after spinning
+            const spinButton = document.getElementById('spin-button');
+            spinButton.style.display = 'none';
+            
+            // Show result with the actual sticker name from the purchase
+            resultSticker.src = selectedSticker ? selectedSticker.image : '/prizes/sticker.png';
+            resultName.textContent = data.purchase.itemName;
+            resultContainer.classList.remove('hidden');
+            
+            // Update user's chip balance
+            const currentChips = parseInt(document.querySelector('.user-balance strong').textContent);
+            document.querySelector('.user-balance strong').textContent = currentChips - 2;
+            
+            spinStatus.textContent = 'congratulations!';
+            
+            isSpinning = false;
+            updateButtonState();
+          }, 3000);
+        } else {
+          alert('Purchase failed: ' + data.error);
+          spinStatus.textContent = 'purchase failed';
+          isSpinning = false;
+          updateButtonState();
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Something went wrong. Please try again.');
+        spinStatus.textContent = 'error occurred';
+        isSpinning = false;
+        updateButtonState();
+      }
+    }
+    
+    function handleSpinAgain() {
+      window.location.reload();
+    }
+    
+    function createWheelSections(winningStickerName = null) {
+      const wheelSections = document.getElementById('wheel-sections');
+      wheelSections.innerHTML = '';
+      
+      const numStickers = availableStickers.length;
+      if (numStickers === 0) return;
+      
+      const anglePerSection = 360 / numStickers;
+      
+      availableStickers.forEach((sticker, index) => {
+        const section = document.createElement('div');
+        section.className = 'wheel-section';
+        
+        // Add winning class if this is the winning sticker
+        if (winningStickerName && sticker.name === winningStickerName) {
+          section.classList.add('winning-segment');
+        }
+        
+        // Rotate each section to create pie slices
+        // Start from top (12 o'clock) and go clockwise
+        section.style.transform = `rotate(${index * anglePerSection}deg)`;
+        
+        const img = document.createElement('img');
+        img.src = sticker.image;
+        img.alt = sticker.name;
+        img.title = sticker.name;
+        
+        section.appendChild(img);
+        wheelSections.appendChild(section);
+      });
+    }
+    
+    async function loadAvailableStickers() {
+      try {
+        const response = await fetch('/api/stickers');
+        const data = await response.json();
+        
+        if (data.success) {
+          availableStickers = data.stickers.map(sticker => ({
+            name: sticker.stickerName,
+            image: sticker.stickerImage || '/prizes/sticker.png'
+          }));
+          // Create wheel sections
+          createWheelSections();
+          // Check if user has enough chips after loading stickers
+          updateButtonState();
+        } else {
+          throw new Error(data.error || 'Failed to load stickers');
+        }
+      } catch (error) {
+        console.error('Error loading stickers:', error);
+        spinStatus.textContent = 'failed to load stickers';
+      }
+    }
+  });
+</script>

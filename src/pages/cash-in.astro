@@ -83,11 +83,14 @@ const prizeData = {
   
   <div class="prize-grid">
     {Object.entries(prizeData).map(([prizeName, prize]) => (
-      <div class="prize-card">
+      <div class="prize-card" data-prize-name={prizeName} data-prize-chips={prize.chips} data-prize-type={prizeName.includes('sticker') ? 'sticker' : 'other'}>
         <img src={prize.src} alt={prizeName} />
         <h3>{prizeName}</h3>
         <p class="price">{prize.chips} chips</p>
         <p class="description">{prize.description}</p>
+        <button class="purchase-button" data-prize-name={prizeName} data-prize-chips={prize.chips} data-prize-type={prizeName.includes('sticker') ? 'sticker' : 'other'}>
+          purchase
+        </button>
       </div>
     ))}
   </div>
@@ -186,9 +189,33 @@ const prizeData = {
   .description {
     color: var(--pink);
     opacity: 0.8;
-    margin: 0;
+    margin: 0 0 16px 0;
     line-height: 1.4;
     font-size: 0.9em;
+  }
+  
+  .purchase-button {
+    background: var(--pink);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-size: 1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+  }
+  
+  .purchase-button:hover:not(:disabled) {
+    background: #ff5580;
+    transform: translateY(-2px);
+  }
+  
+  .purchase-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: #666;
   }
   
   @media (max-width: 768px) {
@@ -206,3 +233,93 @@ const prizeData = {
     }
   }
 </style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const userChips = parseInt(document.querySelector('.user-balance strong').textContent);
+    const purchaseButtons = document.querySelectorAll('.purchase-button');
+    
+    // Update button states based on user's chip balance
+    updateButtonStates();
+    
+    // Add click handlers to purchase buttons
+    purchaseButtons.forEach(button => {
+      button.addEventListener('click', handlePurchase);
+    });
+    
+    function updateButtonStates() {
+      purchaseButtons.forEach(button => {
+        const requiredChips = parseInt(button.dataset.prizeChips);
+        const canAfford = userChips >= requiredChips;
+        
+        button.disabled = !canAfford;
+        if (!canAfford) {
+          button.textContent = 'not enough chips';
+        } else {
+          button.textContent = 'purchase';
+        }
+      });
+    }
+    
+    async function handlePurchase(event) {
+      const button = event.target;
+      const prizeName = button.dataset.prizeName;
+      const prizeChips = parseInt(button.dataset.prizeChips);
+      const prizeType = button.dataset.prizeType;
+      
+      // Handle special sticker cases
+      if (prizeName === 'spin for a sticker') {
+        window.location.href = '/sticker-spin';
+        return;
+      } else if (prizeName === 'pick a sticker') {
+        window.location.href = '/sticker-select';
+        return;
+      }
+      
+      // Confirm purchase
+      if (!confirm(`Are you sure you want to purchase "${prizeName}" for ${prizeChips} chips?`)) {
+        return;
+      }
+      
+      // Disable button and show loading state
+      button.disabled = true;
+      button.textContent = 'purchasing...';
+      
+      try {
+        const response = await fetch('/api/purchase', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            itemName: prizeName,
+            itemType: prizeType,
+            chipsSpent: prizeChips
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          alert(`Congratulations! You purchased "${prizeName}"!`);
+          
+          // Update user's chip balance
+          const currentChips = parseInt(document.querySelector('.user-balance strong').textContent);
+          document.querySelector('.user-balance strong').textContent = currentChips - prizeChips;
+          
+          // Update button states
+          updateButtonStates();
+        } else {
+          alert('Purchase failed: ' + data.error);
+          button.disabled = false;
+          button.textContent = 'purchase';
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Something went wrong. Please try again.');
+        button.disabled = false;
+        button.textContent = 'purchase';
+      }
+    }
+  });
+</script>

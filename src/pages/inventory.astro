@@ -1,0 +1,208 @@
+---
+import InsideLayout from '../layouts/InsideLayout.astro';
+import { requireUser, redirectToLogin } from '../lib/auth.js';
+
+let userData;
+
+export const prerender = false;
+
+try {
+  userData = await requireUser(Astro.request.headers);
+} catch {
+  return redirectToLogin();
+}
+
+var user = userData.fields;
+---
+
+<InsideLayout currentPage="inventory">
+<main>
+  <h1>🎒 your inventory</h1>
+  <p>here's everything you've collected and purchased!</p>
+  
+  <div class="user-balance">
+    <p>you have <strong>{user.chips}</strong> chips available</p>
+  </div>
+  
+  <div class="inventory-sections">
+    <!-- Purchases Section -->
+    <section class="purchases-section">
+      <h2>🛍️ your purchases</h2>
+      <div id="purchases-container" class="items-grid">
+        <div class="loading">loading your purchases...</div>
+      </div>
+    </section>
+  </div>
+</main>
+</InsideLayout>
+
+<style>
+  main {
+    padding: 40px;
+    max-width: 1200px;
+    margin: 0 auto;
+    height: 100%;
+    box-sizing: border-box;
+    overflow-y: auto;
+  }
+  
+  h1 {
+    color: var(--pink);
+    text-align: center;
+    margin-bottom: 16px;
+    font-size: 2.5em;
+  }
+  
+  main > p {
+    text-align: center;
+    color: var(--pink);
+    margin-bottom: 40px;
+    font-size: 1.2em;
+    opacity: 0.9;
+  }
+  
+  .user-balance {
+    text-align: center;
+    background: rgba(255, 105, 138, 0.1);
+    border: 1px solid var(--pink);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 40px;
+  }
+  
+  .user-balance p {
+    margin: 0;
+    color: var(--pink);
+    font-size: 1.2em;
+  }
+  
+  .user-balance strong {
+    color: var(--pink);
+    font-size: 1.4em;
+  }
+  
+  .inventory-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+  }
+  
+  section h2 {
+    color: var(--pink);
+    margin-bottom: 20px;
+    font-size: 1.8em;
+    text-align: center;
+  }
+  
+  .items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+  }
+  
+  .purchase-item {
+    background: rgba(0, 0, 0, 0.6);
+    border: 2px solid var(--pink);
+    border-radius: 16px;
+    padding: 16px;
+    text-align: center;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .purchase-item:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(255, 105, 138, 0.3);
+  }
+  
+  .purchase-item h3 {
+    color: var(--pink);
+    margin: 0 0 12px 0;
+    font-size: 1.1em;
+  }
+  
+  .purchase-item .price {
+    color: var(--pink);
+    font-weight: 700;
+    font-size: 1em;
+    margin: 0 0 8px 0;
+  }
+  
+  
+  .purchase-item .item-type {
+    color: var(--pink);
+    opacity: 0.7;
+    font-size: 0.8em;
+    margin: 4px 0 0 0;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  
+  .loading {
+    text-align: center;
+    color: var(--pink);
+    opacity: 0.7;
+    font-style: italic;
+    grid-column: 1 / -1;
+  }
+  
+  .empty-state {
+    text-align: center;
+    color: var(--pink);
+    opacity: 0.7;
+    font-style: italic;
+    grid-column: 1 / -1;
+    padding: 40px;
+  }
+  
+  @media (max-width: 768px) {
+    .items-grid {
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+    
+    main {
+      padding: 20px;
+    }
+    
+    h1 {
+      font-size: 2em;
+    }
+  }
+</style>
+
+<script>
+  async function loadInventory() {
+    try {
+      const response = await fetch('/api/inventory');
+      const data = await response.json();
+      
+      if (data.success) {
+        loadPurchases(data.data.purchases);
+      } else {
+        console.error('Failed to load inventory:', data.error);
+      }
+    } catch (error) {
+      console.error('Error loading inventory:', error);
+    }
+  }
+  
+  function loadPurchases(purchases) {
+    const container = document.getElementById('purchases-container');
+    
+    if (purchases.length === 0) {
+      container.innerHTML = '<div class="empty-state">no purchases yet! visit the cash-in page to spend your chips.</div>';
+      return;
+    }
+    
+    container.innerHTML = purchases.map(purchase => `
+      <div class="purchase-item">
+        <h3>${purchase.itemName}</h3>
+        <p class="price">${purchase.chipsSpent} chips</p>
+        <p class="item-type">${purchase.itemType}</p>
+      </div>
+    `).join('');
+  }
+  
+  // Load inventory when page loads
+  document.addEventListener('DOMContentLoaded', loadInventory);
+</script>

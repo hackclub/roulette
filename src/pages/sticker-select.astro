@@ -1,0 +1,368 @@
+---
+import InsideLayout from '../layouts/InsideLayout.astro';
+import { requireUser, redirectToLogin } from '../lib/auth.js';
+
+let userData;
+
+export const prerender = false;
+
+try {
+  userData = await requireUser(Astro.request.headers);
+} catch {
+  return redirectToLogin();
+}
+
+var user = userData.fields;
+---
+
+<InsideLayout currentPage="sticker-select">
+<main>
+  <h1>🎯 pick a sticker</h1>
+  <p>don't test your luck. just choose your favorite!</p>
+  
+  <div class="user-balance">
+    <p>you have <strong>{user.chips}</strong> chips available</p>
+    <p class="cost">cost: <strong>3 chips</strong></p>
+  </div>
+  
+  <div id="stickers-container" class="stickers-grid">
+    <div class="loading">loading available stickers...</div>
+  </div>
+  
+  <div class="back-link">
+    <a href="/cash-in">← back to cash-in</a>
+  </div>
+</main>
+</InsideLayout>
+
+<style is:global>
+  main {
+    padding: 40px;
+    max-width: 1000px;
+    margin: 0 auto;
+    height: 100%;
+    box-sizing: border-box;
+    overflow-y: auto;
+    text-align: center;
+  }
+  
+  h1 {
+    color: var(--pink);
+    margin-bottom: 16px;
+    font-size: 2.5em;
+  }
+  
+  main > p {
+    color: var(--pink);
+    margin-bottom: 40px;
+    font-size: 1.2em;
+    opacity: 0.9;
+  }
+  
+  .user-balance {
+    background: rgba(255, 105, 138, 0.1);
+    border: 1px solid var(--pink);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 40px;
+    display: inline-block;
+  }
+  
+  .user-balance p {
+    margin: 0;
+    color: var(--pink);
+    font-size: 1.2em;
+  }
+  
+  .user-balance .cost {
+    margin-top: 8px;
+    opacity: 0.8;
+  }
+  
+  .user-balance strong {
+    color: var(--pink);
+    font-size: 1.4em;
+  }
+  
+  .stickers-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 40px;
+
+    margin-left: auto;
+    margin-right: auto;
+    justify-content: center;
+  }
+
+  
+  
+  .sticker-option {
+    background: rgba(0, 0, 0, 0.6);
+    border: 2px solid var(--pink);
+    border-radius: 12px;
+    padding: 12px;
+    text-align: center;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    height: 100%;
+    display: flex;
+    flex-flow: column;
+    justify-content: center;
+  }
+
+  
+  .sticker-option:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 105, 138, 0.3);
+    border-color: #ff5580;
+  }
+  
+  .sticker-option.selected {
+    border-color: #ff5580;
+    background: rgba(255, 105, 138, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 105, 138, 0.6);
+    border-width: 3px;
+  }
+  
+  .sticker-image {
+    width: 100%;
+  }
+  
+  .sticker-option h3 {
+    color: var(--pink);
+    margin: 0;
+    font-size: 0.8em;
+    line-height: 1.2;
+  }
+  
+  .loading {
+    text-align: center;
+    color: var(--pink);
+    opacity: 0.7;
+    font-style: italic;
+    grid-column: 1 / -1;
+    padding: 40px;
+  }
+  
+  .empty-state {
+    text-align: center;
+    color: var(--pink);
+    opacity: 0.7;
+    font-style: italic;
+    grid-column: 1 / -1;
+    padding: 40px;
+  }
+  
+  .purchase-button {
+    background: #ff6b8a;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-size: 1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin: 20px auto;
+    width: 200px;
+    display: block;
+  }
+  
+  .purchase-button:hover:not(:disabled) {
+    background: #ff5580;
+    transform: translateY(-2px);
+  }
+  
+  .purchase-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: #666;
+  }
+  
+  .back-link {
+    margin-top: 40px;
+  }
+  
+  .back-link a {
+    color: var(--pink);
+    text-decoration: none;
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+  }
+  
+  .back-link a:hover {
+    opacity: 1;
+  }
+  
+  @media (max-width: 768px) {
+    main {
+      padding: 20px;
+    }
+    
+    .stickers-grid {
+      grid-template-columns: repeat(auto-fit, 100px);
+      gap: 12px;
+    }
+    
+    .sticker-image {
+      height: 70px;
+    }
+    
+    .sticker-option h3 {
+      font-size: 0.7em;
+    }
+    
+    h1 {
+      font-size: 2em;
+    }
+  }
+</style>
+
+<script>
+  let selectedSticker = null;
+  let availableStickers = [];
+  
+  document.addEventListener('DOMContentLoaded', function() {
+    loadAvailableStickers();
+    
+    // Add event listener for purchase button (will be added dynamically)
+    document.addEventListener('click', function(e) {
+      if (e.target.classList.contains('purchase-button')) {
+        handlePurchase();
+      }
+    });
+  });
+  
+  async function loadAvailableStickers() {
+    try {
+      const response = await fetch('/api/stickers');
+      const data = await response.json();
+      
+      if (data.success) {
+        availableStickers = data.stickers.map(sticker => ({
+          name: sticker.stickerName,
+          image: sticker.stickerImage || '/prizes/sticker.png'
+        }));
+        renderStickers();
+      } else {
+        throw new Error(data.error || 'Failed to load stickers');
+      }
+    } catch (error) {
+      console.error('Error loading stickers:', error);
+      document.getElementById('stickers-container').innerHTML = 
+        '<div class="empty-state">failed to load stickers. please try again.</div>';
+    }
+  }
+  
+  function renderStickers() {
+    const container = document.getElementById('stickers-container');
+    
+    if (availableStickers.length === 0) {
+      container.innerHTML = '<div class="empty-state">no stickers available right now.</div>';
+      return;
+    }
+    
+    container.innerHTML = availableStickers.map(sticker => `
+      <div class="sticker-option" data-sticker-name="${sticker.name}">
+        <img class="sticker-image" src="${sticker.image}" alt="${sticker.name}" style="width: 100%; object-fit: contain; border-radius: 8px; margin-bottom: 8px; display: block;" />
+        <h3>${sticker.name}</h3>
+      </div>
+    `).join('');
+    
+    // Add click handlers
+    document.querySelectorAll('.sticker-option').forEach(option => {
+      option.addEventListener('click', function() {
+        console.log('Sticker clicked:', this.dataset.stickerName);
+        selectSticker(this);
+      });
+    });
+  }
+  
+  function selectSticker(element) {
+    // Remove previous selection
+    document.querySelectorAll('.sticker-option').forEach(opt => {
+      opt.classList.remove('selected');
+    });
+    
+    // Add selection to clicked element
+    element.classList.add('selected');
+    selectedSticker = element.dataset.stickerName;
+    
+    // Add purchase button if not already present
+    if (!document.querySelector('.purchase-button')) {
+      const button = document.createElement('button');
+      button.className = 'purchase-button';
+      button.textContent = 'purchase this sticker!';
+      button.disabled = !canAfford();
+      // Add button after the stickers grid
+      document.querySelector('.stickers-grid').insertAdjacentElement('afterend', button);
+    } else {
+      // Update existing button
+      const button = document.querySelector('.purchase-button');
+      button.disabled = !canAfford();
+    }
+  }
+  
+  function canAfford() {
+    const userChips = parseInt(document.querySelector('.user-balance strong').textContent);
+    return userChips >= 3;
+  }
+  
+  async function handlePurchase() {
+    if (!selectedSticker) {
+      alert('Please select a sticker first!');
+      return;
+    }
+    
+    if (!canAfford()) {
+      alert('You don\'t have enough chips!');
+      return;
+    }
+    
+    const button = document.querySelector('.purchase-button');
+    button.disabled = true;
+    button.textContent = 'purchasing...';
+    
+    try {
+      const response = await fetch('/api/purchase', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          itemName: selectedSticker,
+          itemType: 'sticker',
+          chipsSpent: 3
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        alert(`Congratulations! You purchased "${selectedSticker}"!`);
+        
+        // Update user's chip balance
+        const currentChips = parseInt(document.querySelector('.user-balance strong').textContent);
+        document.querySelector('.user-balance strong').textContent = currentChips - 3;
+        
+        // Reset selection
+        selectedSticker = null;
+        document.querySelectorAll('.sticker-option').forEach(opt => {
+          opt.classList.remove('selected');
+        });
+        button.remove();
+      } else {
+        alert('Purchase failed: ' + data.error);
+        button.disabled = false;
+        button.textContent = 'purchase this sticker!';
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Something went wrong. Please try again.');
+      button.disabled = false;
+      button.textContent = 'purchase this sticker!';
+    }
+  }
+</script>
