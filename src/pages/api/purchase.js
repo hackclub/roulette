@@ -57,8 +57,65 @@ export async function POST({ request }) {
     });
   }
 
-  if (typeof chipsSpent !== 'number' || chipsSpent <= 0) {
+  if (typeof chipsSpent !== 'number' || chipsSpent <= 0 || chipsSpent > 10000) {
     return new Response(JSON.stringify({ error: 'Invalid chips amount' }), { 
+      status: 400,
+      headers
+    });
+  }
+
+  // Validate item against known items
+  const validItems = {
+    "spin for a sticker": 2,
+    "pick a sticker": 3,
+    "$10 steam gift card": 25,
+    "$10 itch.io credit": 25,
+    "aseprite": 40,
+    "$25 fangamer gift card": 60,
+    "$30 soft toy credit": 75,
+    "steam publishing credit": 200,
+    "$400 console grant": 800
+  };
+
+  // Special handling for sticker purchases
+  let isValidItem = false;
+  let expectedPrice = 0;
+
+  if (sanitizedItemType === 'sticker') {
+    // For stickers, check if it's a valid sticker purchase
+    if (sanitizedItemName === 'spin for a sticker' && chipsSpent === 2) {
+      isValidItem = true;
+      expectedPrice = 2;
+    } else if (chipsSpent === 3) {
+      // For "pick a sticker", validate that it's a real sticker name
+      try {
+        const availableStickers = await getAvailableStickers();
+        const stickerExists = availableStickers.some(sticker => sticker.stickerName === sanitizedItemName);
+        if (stickerExists) {
+          isValidItem = true;
+          expectedPrice = 3;
+        }
+      } catch (error) {
+        console.error('Error validating sticker:', error);
+      }
+    }
+  } else {
+    // For non-sticker items, use the original validation
+    if (validItems.hasOwnProperty(sanitizedItemName)) {
+      isValidItem = true;
+      expectedPrice = validItems[sanitizedItemName];
+    }
+  }
+
+  if (!isValidItem) {
+    return new Response(JSON.stringify({ error: 'Invalid item name' }), { 
+      status: 400,
+      headers
+    });
+  }
+
+  if (expectedPrice !== chipsSpent) {
+    return new Response(JSON.stringify({ error: 'Invalid price for item' }), { 
       status: 400,
       headers
     });

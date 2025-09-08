@@ -246,14 +246,13 @@ var user = userData.fields;
       "$400 console grant": "/prizes/console.png"
     };
     
-    // Group purchases by item name and chips spent
+    // Group purchases by item name only (ignore chips spent differences)
     const groupedPurchases = {};
     purchases.forEach(purchase => {
-      const key = `${purchase.itemName}_${purchase.chipsSpent}`;
+      const key = purchase.itemName;
       if (!groupedPurchases[key]) {
         groupedPurchases[key] = {
           itemName: purchase.itemName,
-          chipsSpent: purchase.chipsSpent,
           itemType: purchase.itemType,
           count: 0
         };
