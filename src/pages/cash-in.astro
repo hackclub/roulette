@@ -79,6 +79,7 @@ const prizeData = {
   
   <div class="user-balance">
     <p>you have <strong>{user.chips}</strong> chips available</p>
+    <a href="/inventory" class="inventory-button">view my purchases</a>
   </div>
   
   <div class="prize-grid">
@@ -142,6 +143,25 @@ const prizeData = {
   .user-balance strong {
     color: var(--pink);
     font-size: 1.4em;
+  }
+  
+  .inventory-button {
+    display: inline-block;
+    background: rgba(255, 105, 138, 0.2);
+    color: var(--pink);
+    border: 2px solid var(--pink);
+    border-radius: 8px;
+    padding: 10px 20px;
+    text-decoration: none;
+    font-weight: 600;
+    margin-top: 12px;
+    transition: all 0.2s ease;
+  }
+  
+  .inventory-button:hover {
+    background: var(--pink);
+    color: white;
+    transform: translateY(-2px);
   }
   
   .prize-grid {

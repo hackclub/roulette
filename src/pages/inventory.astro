@@ -36,7 +36,7 @@ var user = userData.fields;
 </main>
 </InsideLayout>
 
-<style>
+<style is:global>
   main {
     padding: 40px;
     max-width: 1200px;
@@ -96,17 +96,27 @@ var user = userData.fields;
   
   .items-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
   }
   
   .purchase-item {
     background: rgba(0, 0, 0, 0.6);
     border: 2px solid var(--pink);
-    border-radius: 16px;
-    padding: 16px;
+    border-radius: 12px;
+    padding: 12px;
     text-align: center;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .purchase-item .item-image {
+    width: 80%;
+    object-fit: contain;
+    margin-bottom: 8px;
   }
   
   .purchase-item:hover {
@@ -116,25 +126,29 @@ var user = userData.fields;
   
   .purchase-item h3 {
     color: var(--pink);
-    margin: 0 0 12px 0;
-    font-size: 1.1em;
+    margin: 0 0 6px 0;
+    font-size: 0.9em;
+    line-height: 1.2;
   }
-  
-  .purchase-item .price {
-    color: var(--pink);
-    font-weight: 700;
-    font-size: 1em;
-    margin: 0 0 8px 0;
-  }
-  
   
   .purchase-item .item-type {
     color: var(--pink);
     opacity: 0.7;
-    font-size: 0.8em;
-    margin: 4px 0 0 0;
+    font-size: 0.7em;
+    margin: 2px 0 0 0;
     text-transform: uppercase;
     font-weight: 600;
+  }
+  
+  .purchase-item .total-cost {
+    color: var(--pink);
+    font-weight: 700;
+    font-size: 0.7em;
+    margin: 4px 0 0 0;
+    background: rgba(255, 105, 138, 0.1);
+    padding: 2px 6px;
+    border-radius: 3px;
+    display: inline-block;
   }
   
   .loading {
@@ -173,34 +187,109 @@ var user = userData.fields;
 <script>
   async function loadInventory() {
     try {
-      const response = await fetch('/api/inventory');
-      const data = await response.json();
+      // Load both inventory and stickers data
+      const [inventoryResponse, stickersResponse] = await Promise.all([
+        fetch('/api/inventory'),
+        fetch('/api/stickers')
+      ]);
       
-      if (data.success) {
-        loadPurchases(data.data.purchases);
+      const inventoryData = await inventoryResponse.json();
+      const stickersData = await stickersResponse.json();
+      
+      console.log('Inventory API response:', inventoryData);
+      console.log('Stickers API response:', stickersData);
+      
+      if (inventoryData.success) {
+        console.log('Purchases data:', inventoryData.data.purchases);
+        console.log('Full stickers response:', stickersData);
+        
+        // Handle stickers data properly
+        let stickers = [];
+        if (stickersData && stickersData.success && Array.isArray(stickersData.stickers)) {
+          stickers = stickersData.stickers;
+        } else if (Array.isArray(stickersData)) {
+          stickers = stickersData;
+        }
+        
+        console.log('Processed stickers:', stickers);
+        loadPurchases(inventoryData.data.purchases, stickers);
       } else {
-        console.error('Failed to load inventory:', data.error);
+        console.error('Failed to load inventory:', inventoryData.error);
       }
     } catch (error) {
       console.error('Error loading inventory:', error);
     }
   }
   
-  function loadPurchases(purchases) {
+  function loadPurchases(purchases, stickers = []) {
     const container = document.getElementById('purchases-container');
     
-    if (purchases.length === 0) {
+    console.log('loadPurchases called with:', purchases);
+    console.log('purchases.length:', purchases ? purchases.length : 'undefined');
+    console.log('stickers:', stickers);
+    
+    if (!purchases || purchases.length === 0) {
       container.innerHTML = '<div class="empty-state">no purchases yet! visit the cash-in page to spend your chips.</div>';
       return;
     }
     
-    container.innerHTML = purchases.map(purchase => `
-      <div class="purchase-item">
-        <h3>${purchase.itemName}</h3>
-        <p class="price">${purchase.chipsSpent} chips</p>
-        <p class="item-type">${purchase.itemType}</p>
-      </div>
-    `).join('');
+    // Prize data from cash-in.astro (same images)
+    const prizeData = {
+      "spin for a sticker": "/prizes/random sticker.png",
+      "pick a sticker": "/prizes/sticker.png",
+      "$10 steam gift card": "/prizes/steam.png",
+      "$10 itch.io credit": "/prizes/itch.png",
+      "aseprite": "/prizes/aseprite.png",
+      "$25 fangamer gift card": "/prizes/fangamer.png",
+      "$30 soft toy credit": "/prizes/soft toys.png",
+      "steam publishing credit": "/prizes/steam grant.png",
+      "$400 console grant": "/prizes/console.png"
+    };
+    
+    // Group purchases by item name and chips spent
+    const groupedPurchases = {};
+    purchases.forEach(purchase => {
+      const key = `${purchase.itemName}_${purchase.chipsSpent}`;
+      if (!groupedPurchases[key]) {
+        groupedPurchases[key] = {
+          itemName: purchase.itemName,
+          chipsSpent: purchase.chipsSpent,
+          itemType: purchase.itemType,
+          count: 0
+        };
+      }
+      groupedPurchases[key].count++;
+    });
+    
+    // Convert to array and sort by count (most frequent first)
+    const groupedArray = Object.values(groupedPurchases).sort((a, b) => b.count - a.count);
+    
+    container.innerHTML = groupedArray.map(item => {
+      // Get image for this item
+      let imageSrc = prizeData[item.itemName];
+      
+      // If it's a sticker and not in prizeData, look in stickers array
+      if (!imageSrc && item.itemType === 'sticker') {
+        console.log('Looking for sticker:', item.itemName);
+        console.log('Available stickers:', Array.isArray(stickers) ? stickers.map(s => s.stickerName) : 'Not an array');
+        const sticker = Array.isArray(stickers) ? stickers.find(s => s.stickerName === item.itemName) : null;
+        console.log('Found sticker:', sticker);
+        imageSrc = sticker ? sticker.stickerImage : '/prizes/sticker.png';
+      }
+      
+      // Fallback image
+      if (!imageSrc) {
+        imageSrc = '/prizes/sticker.png';
+      }
+      
+      return `
+        <div class="purchase-item">
+          <img src="${imageSrc}" alt="${item.itemName}" class="item-image" />
+          <h3>${item.itemName}${item.count > 1 ? ` ×${item.count}` : ''}</h3>
+          <p class="item-type">${item.itemType}</p>
+        </div>
+      `;
+    }).join('');
   }
   
   // Load inventory when page loads

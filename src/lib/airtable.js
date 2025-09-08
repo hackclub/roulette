@@ -208,6 +208,8 @@ export async function createPurchase(slackId, itemName, itemType, chipsSpent) {
   const user = await getUserBySlackId(slackId);
   if (!user) throw new Error('user not found');
   
+  console.log('createPurchase: Creating purchase for user:', user.id, 'slackId:', slackId);
+  
   // Check if user has enough chips
   const currentChips = Number(user.fields.chips || 0);
   if (currentChips < chipsSpent) {
@@ -215,32 +217,52 @@ export async function createPurchase(slackId, itemName, itemType, chipsSpent) {
   }
   
   // Create purchase record
-  const purchase = await base('Purchases').create({
+  const purchaseData = {
     'purchaseId': `${slackId}_${Date.now()}`, // Unique purchase ID
     'user': [user.id], // Link to Users table
     'itemName': itemName,
     'itemType': itemType,
     'chipsSpent': chipsSpent
-  });
+  };
+  
+  console.log('createPurchase: Creating purchase with data:', purchaseData);
+  
+  const purchase = await base('Purchases').create(purchaseData);
+  
+  console.log('createPurchase: Created purchase record:', purchase.id);
   
   // Deduct chips from user
   await base('Users').update(user.id, {
     chips: currentChips - chipsSpent
   });
   
+  console.log('createPurchase: Updated user chips from', currentChips, 'to', currentChips - chipsSpent);
+  
   return purchase;
 }
 
 export async function getUserPurchases(slackId) {
   const user = await getUserBySlackId(slackId);
-  if (!user) return [];
+  if (!user) {
+    console.log('getUserPurchases: User not found for slackId:', slackId);
+    return [];
+  }
   
-  const records = await base('Purchases')
-    .select({
-      filterByFormula: `{user} = "${user.id}"`,
-      sort: [{ field: 'purchaseId', direction: 'desc' }]
-    })
-    .all();
+  console.log('getUserPurchases: Found user:', user.id, 'for slackId:', slackId);
+  
+  // Get all purchases and filter in JavaScript
+  const allRecords = await base('Purchases').select().all();
+  console.log('getUserPurchases: ALL purchase records:', allRecords.length);
+  
+  // Filter for this user's purchases
+  const records = allRecords.filter(record => {
+    const userField = record.fields.user;
+    console.log('Checking record:', record.id, 'user field:', userField, 'looking for:', user.id);
+    return userField && userField.includes(user.id);
+  });
+    
+  console.log('getUserPurchases: Found', records.length, 'purchase records');
+  console.log('getUserPurchases: Records:', records.map(r => ({ id: r.id, fields: r.fields })));
     
   return records.map(record => ({
     id: record.id,
