@@ -131,136 +131,17 @@ if (!hasCamera && (wagerChoice !== '—')) {
   </section>
 
 
-  {!hasWager ? (
-    <section class="cta">
-      <LinkButton href="/spin/wager">start the round</LinkButton>
-    </section>
-  ) : (
-    <div>
-      {hasSubmittedProject ? (
-        <section class="congratulations">
-          <h2>🎉 congratulations! you submitted!</h2>
-          <p>check out your game in the <a href="/gallery">gallery tab</a>.</p>
-          
-          <div class="countdown">
-            <p>next round begins in <span id="countdown-timer">calculating...</span></p>
-          </div>
-        </section>
-      ) : hasWager ? (
-        <>
-          <section class="summary">
-            <h2>your spins this round</h2>
-            <div class="summary-row">
-              <div class="summary-card">
-                <span class="label">camera</span>
-                <span class="value">{pickedCamera}</span>
-                {camInfo && (
-                  <div class="tooltip">
-                    <div class="tip-title">{pickedCamera}</div>
-                    <p class="tip-desc">{camInfo.description}</p>
-                    <div class="tip-images">
-                      {camExKeys.slice(0,4).map((k) => (
-                        <img src={camInfo.examples[k]} alt={k} />
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-              <div class="summary-card">
-                <span class="label">gameplay</span>
-                <span class="value">{pickedGameplay}</span>
-                {gameInfo && (
-                  <div class="tooltip">
-                    <div class="tip-title">{pickedGameplay}</div>
-                    <p class="tip-desc">{gameInfo.description}</p>
-                    <div class="tip-images">
-                      {gameExKeys.slice(0,4).map((k) => (
-                        <img src={gameInfo.examples[k]} alt={k} />
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-              <div class="summary-card">
-                <span class="label">setting</span>
-                <span class="value">{pickedSetting}</span>
-                {setInfo && (
-                  <div class="tooltip">
-                    <div class="tip-title">{pickedSetting}</div>
-                    <p class="tip-desc">{setInfo.description}</p>
-                    <div class="tip-images">
-                      {camExKeys.slice(0,4).map((k) => (
-                        <img src={camInfo.examples[k]} alt={k} />
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </section>
-
-          <section class="wager-summary">
-            <h2>your wager</h2>
-            <div class="summary-row">
-              <div class="summary-card">
-                <span class="label">hour target</span>
-                <span class="value">{hourTarget}</span>
-              </div>
-              <div class="summary-card">
-                <span class="label">multiplier</span>
-                <span class="value">{multiplier}</span>
-              </div>
-              <div class="summary-card">
-                <span class="label">chips wagered</span>
-                <span class="value">{wagerAmount}</span>
-              </div>
-            </div>
-            
-          </section>
-
-          <p>round {roundNumber} ends on {getRoundEndDate(roundNumber)}</p>
-          {hasCamera && hasGameplay && hasSetting ? (
-            <section class="submit" style="padding-top: 40px;">
-              {hasDetailsSubmitted ? (
-                <div class="submit-section">
-                  <LinkButton href="/spin/submission">submit game for round {roundNumber}</LinkButton>
-                  <p class="lifeline-note">💡 didn't hit your target? submit anyway to get some chips back!</p>
-                </div>
-              ) : (
-                <div class="submit-disabled">
-                  <LinkButton disabled>submit game for round {roundNumber}</LinkButton>
-                  <p class="submit-note">⚠️ complete your details in <a href="/settings">settings</a> first</p>
-                </div>
-              )}
-            </section>
-          ) : null}
-        </>
-      ) : null}
-
-      {!hasCamera && !hasGameplay && !hasSetting ? (
-        <section class="cta">
-          <LinkButton href={nextHref}>{nextLabel}</LinkButton>
-        </section>
-      ) : (
-        <div>
-          {nextHref ? (
-            <section class="cta">
-              <LinkButton href={nextHref}>{nextLabel}</LinkButton>
-            </section>
-          ) : null}
-        </div>
-      )}
- 
-          {(respinTokens > 0 && (hasWager || hasCamera || hasGameplay || hasSetting) && !hasSubmittedProject) && (
-            <div style="margin-top: 12px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-              <span>respin tokens: <strong>{respinTokens}</strong> - </span>
-              <a id="use-respin" class="button linkbutton" href="#" style="margin:0;">use respin token</a>
-            </div>
-          )}
-           
-        </div>
-      )}
+  <section class="roulette-over">
+    <h2>🎯 roulette is over!</h2>
+    <p>the wheels have ended, but your chips are still here :D</p>
+    <p>you have <strong>{user.chips}</strong> chips to spend on awesome prizes.</p>
+    
+    <div class="cta-buttons">
+      <LinkButton href="/cash-in">🎁 cash in your chips</LinkButton>
+      <LinkButton href="/inventory">🎒 view your purchases</LinkButton>
     </div>
+    
+  </section>
   
   
   
@@ -651,6 +532,71 @@ h2 { margin: 0 0 12px 0; font-size: 1.3em; margin-top: 32px; }
 
 .submit-disabled .submit-note a:hover {
   color: #ff8aa3;
+}
+
+/* Roulette Over */
+.roulette-over {
+  text-align: center;
+  padding: 60px 20px;
+  background: rgba(255, 105, 138, 0.05);
+  border-radius: 16px;
+  margin-top: 40px;
+}
+
+.roulette-over h2 {
+  color: var(--pink);
+  font-size: 2.2em;
+  margin-bottom: 20px;
+}
+
+.roulette-over p {
+  font-size: 1.2em;
+  margin-bottom: 16px;
+  opacity: 0.9;
+}
+
+.roulette-over strong {
+  color: var(--pink);
+  font-size: 1.3em;
+}
+
+.cta-buttons {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin: 30px 0;
+  flex-wrap: wrap;
+}
+
+.prize-preview {
+  margin-top: 40px;
+  padding: 30px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  border: 1px solid var(--pink);
+}
+
+.prize-preview h3 {
+  color: var(--pink);
+  font-size: 1.4em;
+  margin-bottom: 20px;
+}
+
+.prize-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+}
+
+.prize-item {
+  background: rgba(255, 105, 138, 0.1);
+  border: 1px solid var(--pink);
+  border-radius: 8px;
+  padding: 8px 16px;
+  color: var(--pink);
+  font-size: 0.9em;
+  font-weight: 600;
 }
 
 /* Responsive behavior: show cover on small screens, hide main */
